@@ -16,57 +16,62 @@
 ## 项目简介
 
 `krfb-virtualmonitor` 是 KDE 的 VNC 服务器 [krfb](https://invent.kde.org/network/krfb)
-自带的命令行工具，可以在 KWin 上创建**虚拟显示器**——纯粹由软件模拟出来的
-额外屏幕，适合无头远程访问、软件 KVM，或者把平板当成第二块屏幕来用。
+自带的命令行工具，用于在 KWin 上创建**虚拟显示器**：由软件模拟的额外屏幕，可用于
+无头远程访问、软件 KVM，以及将平板电脑作为第二块屏幕。
 
-它能力很强，但用起来很裸：每改一个参数就要重新敲一条带明文密码的长命令，
-且没有任何手段能看到哪些屏幕正在运行。本项目把它封装成一个原生 Qt6 桌面程序，
-并且守住两条不可妥协的底线：
+该工具能力完整，但不保存任何状态：每次修改参数都要重新输入一条包含明文密码的完整
+命令，且没有任何方式查看哪些屏幕正在运行。本项目为它提供一个原生 Qt6 前端，并保证
+两条不变式：
 
-> **一、关掉 GUI 不影响任何正在运行的虚拟屏。**
-> **二、重新打开 GUI 一定能重新接管它们。**
+> **一、关闭 GUI 不影响任何正在运行的虚拟屏。**
+> **二、重新打开 GUI 一定重新接管它们。**
 
 ## 功能特性
 
-- **完整的生命周期管理** —— 左列表 + 右详情的界面，新建、编辑、启停、
-  全部启动/全部停止、删除虚拟屏。
-- **如实的状态跟踪** —— 只有进程真正存活**且** KWin 里确实出现了
-  `Virtual-<名称>` 输出，才算「运行中」。状态划分明确：运行中、启动中、已停止、
+- **完整的生命周期管理** —— 在列表/详情界面中新建、编辑、启动、停止与删除虚拟屏，
+  可单条操作也可批量操作。
+- **经校验的状态判定** —— 只有进程确实存活**且** KWin 已生成
+  `Virtual-<名称>` 输出，才判定为「运行中」。状态划分明确：运行中、启动中、已停止、
   异常退出、启动失败、未托管。
-- **GUI 重启后仍能继续管理** —— 虚拟屏被放进独立会话，GUI 按 `(名称, 端口)`
-  重新识别身份，用 `pid + starttime` 双重校验存活（防 PID 复用，防僵尸误判）。
-- **纳管外部进程** —— 你自己在终端敲命令启动的 `krfb-virtualmonitor`？
-  「扫描」会从 `/proc` 里找到它并连密码一起接管。
-- **密码进 KDE 钱包** —— 密码存在 KDE 钱包里，走 kwalletd 的原生
-  `org.kde.KWallet` 接口，**不用**通用的 `org.freedesktop.secrets`：那个总线名
-  是先到先得的，系统里只要装了别的实现（gnome-keyring 等）就会被抢走，密码会
-  悄悄存进另一个后端（本机实测踩过）。密码绝不写入配置文件；钱包锁定或停用时，
-  启动时会主动申请解锁，否则降级为仅本次会话内存并**在界面明确标注**，
-  绝不卡死、绝不假装成功。
-- **请求值与实际生效值分开显示** —— KWin 会覆写 `--scale` 请求值；界面同时显示
-  「请求」和「实际」，不一致时标黄提醒。
-- **实时日志窗口** —— 每个虚拟屏的 krfb 输出，按字节增量流式读取。
+- **GUI 重启后继续管理** —— 虚拟屏置于独立会话中；GUI 按 `(名称, 端口)` 重新识别，
+  并以 `pid + starttime` 校验存活，可防止 PID 复用与僵尸进程造成的误判。
+- **纳管外部进程** —— 手动启动的 `krfb-virtualmonitor` 可由「扫描」从 `/proc` 中
+  找到并纳入管理，包括其密码。
+- **三种密码库** —— **KDE 钱包**（使用 kwalletd 的原生 `org.kde.KWallet` 接口，
+  而非通用的 `org.freedesktop.secrets` 总线名——后者先到先得，任何已安装的实现都
+  可能抢占）、**系统密钥环**（Secret Service），以及**内置加密库**（SQLite，
+  每个值用由用户设定的主密码派生的密钥加密，`scrypt` → Fernet）。默认为 KDE 钱包。
+  密码库在设置中选择，列表中只显示当前可用的项目；选定项不可用时，程序按
+  KDE 钱包 → 系统密钥环 → 内置加密库的顺序回落，并在状态行说明实际使用的是哪一个。
+  回落不改写偏好，选定项恢复可用后即重新投入使用。换库时可选择迁移密码；若目标库中
+  已存在本程序的密码，可选择保留目标库中的密码、用当前密码覆盖，或合并——合并会先
+  比对两边内容，列出存在冲突的虚拟屏并询问以哪一边为准。清除原库是独立的、需单独
+  确认的步骤。密码不会写入任何配置文件。锁定的库在启动时按需申请解锁；持有密码的库
+  变为不可用时会弹出警告，而不会表现为「没有保存密码」。
+- **请求值与实际生效值分别显示** —— KWin 可能覆写 `--scale` 请求值；界面同时显示
+  请求值与实际生效值，不一致时标出。
+- **实时日志窗口** —— 每个虚拟屏的 krfb 输出，按增量流式读取。
 - **环境自检** —— 启动时检查 `krfb-virtualmonitor`、Wayland socket、
-  `kscreen-doctor` 健康状况、systemd cgroup 语义，凡是会破坏上述两条底线的情况
-  都会显式报告。
-- **登录自启** —— 一个应用级 `.desktop`，在登录时恢复所有标记为「期望运行」的
-  虚拟屏。明文密码始终不经手磁盘。
-- **桌面原生体验** —— 系统托盘 + 单实例、跟随系统的明暗主题、新建对话框里实时
-  预览「即将执行的完整命令行」。
-- **11 种界面语言** —— 简体/繁体中文、English、日本語、한국어、Deutsch、Français、
-  Español、Italiano、Português (Brasil)、Русский。默认跟随系统语言，也可以在
-  「设置 → 语言」里即时切换（无需重启）。
-- **关窗行为自己定** —— 标题栏的 X 可以是缩到托盘、退出程序，或每次都问一遍
-  （弹窗里可勾选「记住我的选择」）。「设置」里也有对应选项。
+  `kscreen-doctor` 状态与 systemd cgroup 语义，并报告任何会破坏上述两条不变式的
+  条件。
+- **登录自启** —— 单个应用级 `.desktop` 条目，登录时恢复所有标记为「期望运行」的
+  虚拟屏。
+- **桌面集成** —— 系统托盘与单实例处理、跟随系统调色板的明暗主题，以及在对话框中
+  实时预览即将执行的完整命令行。
+- **11 种界面语言** —— 简体中文、繁體中文、English、日本語、한국어、Deutsch、
+  Français、Español、Italiano、Português (Brasil)、Русский。默认跟随系统语言，
+  也可在「设置 → 语言」中即时切换，无需重启。
+- **可配置的关闭行为** —— 标题栏关闭按钮可设为最小化到托盘、退出程序，或每次询问
+  （询问时提供「记住我的选择」选项）。「设置 → 关闭窗口时」也提供相同选项。
 
 ## 运行要求
 
 | 组件 | 要求 |
 |---|---|
-| 会话 | **Wayland + KWin**（KDE Plasma）。虚拟显示器是 KWin 独有的能力——GNOME 与 X11 都不行，程序启动时会直接说明原因。 |
-| krfb | 提供 `/usr/bin/krfb-virtualmonitor`（Arch 与 Debian/Ubuntu 的包名都是 `krfb`）。 |
-| kscreen | `kscreen-doctor`——强烈建议安装。用于回读**真实**分辨率/缩放，并修正被覆写的 `--scale`。 |
-| kwallet | `kwalletd6`（KDE 钱包）——密码存储需要它。如果在系统设置里关掉了钱包子系统，程序会如实说明，并把密码降级为仅本次会话内存。 |
+| 会话 | **Wayland + KWin**（KDE Plasma）。虚拟显示器是 KWin 独有的能力；在不受支持的会话中，程序会在启动时说明原因。 |
+| krfb | 提供 `/usr/bin/krfb-virtualmonitor`（Arch 与 Debian/Ubuntu 的包名均为 `krfb`）。 |
+| kscreen | `kscreen-doctor`——强烈建议安装。用于回读实际分辨率与缩放，并修正被覆写的 `--scale` 值。 |
+| kwallet | `kwalletd6`（KDE 钱包）——默认密码库。若在系统设置中关闭了钱包子系统，程序将回落到系统密钥环或内置加密库。 |
 | Python | 3.11+（仅源码运行需要；打包版无需任何预装环境）。 |
 | 工具 | [uv](https://docs.astral.sh/uv/) 管理依赖。 |
 
@@ -89,46 +94,54 @@ uv sync
 
 ## 打包成独立可执行程序
 
-构建脚本产出 **onedir 目录**（可执行文件 + `_internal/`），拷到任何 Linux 机器
-都能跑——不需要 Python，不需要虚拟环境，不需要任何依赖：
+`packaging/build.sh` 产出**单个文件**，可在任何 Linux 机器上运行，不需要 Python、
+虚拟环境或任何已安装的依赖：
 
 ```bash
-packaging/build.sh
-./dist/krfb-virtualmonitor-gui/krfb-virtualmonitor-gui
+packaging/build.sh            # → dist/krfb-virtualmonitor-gui   （66 MB）
+./dist/krfb-virtualmonitor-gui
 ```
 
-选 onedir 是刻意的：PyInstaller 的单文件模式每次启动都要把上百 MB 解压到 `/tmp`，
-对一个常驻托盘的 GUI 程序不划算。
+该文件**每次启动**都会把约 170MB 解压到 `$TMPDIR`（参考机器上实测 0.79 秒，已解压的
+目录版为 0.21 秒）。目录版可避免重复解压：
 
-想让它出现在 KDE 应用菜单和 `~/.local/bin` 里：
+```bash
+packaging/build.sh --onedir   # → dist/onedir/krfb-virtualmonitor-gui/
+```
+
+需要在机器之间拷贝单个产物时使用单文件版；长期安装（尤其是绑定了开机自启，每个会话
+都要付解压成本）时使用 `--onedir`。两种产物可在 `dist/` 中共存。
+
+AppImage 经过评估后未采用：它需要 `appimagetool` 与 libfuse2，而 Ubuntu 24.04 及
+更高版本默认不再提供 libfuse2；没有 FUSE 时它同样会在启动时解压整个包，与单文件版
+行为一致。
+
+将程序加入 KDE 应用菜单与 `~/.local/bin`：
 
 ```bash
 packaging/install-desktop.sh              # 安装
 packaging/install-desktop.sh --uninstall  # 卸载
 ```
 
-桌面启动器**优先指向打包版**，没构建过才回退到 `.venv` 源码运行。
+桌面启动器优先使用打包版；若尚未构建，则回退到通过 `.venv` 的源码运行。
 
 ## 使用说明
 
-1. **新建虚拟屏** —— 点「新建」，填名称、分辨率（预设或自定义）、缩放、端口。
-   对话框底部实时显示将要执行的完整命令行。
-2. **启动** —— 程序拉起 `krfb-virtualmonitor`，然后最多等 8 秒，直到 KWin 里
-   真的出现 `Virtual-<名称>` 输出，才算「运行中」。若 KWin 覆写了请求的 scale，
-   程序会通过 `kscreen-doctor` 修正一遍，并把实际生效值回读进详情面板。
-3. **连接** —— 任何 VNC 客户端连 `localhost:<端口>`，密码就是对话框里生成
-   （或你填写）的那个，详情面板可随时查看。
-4. **随时离开** —— 关窗口甚至退出整个 GUI，虚拟屏继续跑；之后再打开，全部重新
-   纳管，日志也还在。
-5. **纳管散落的进程** —— 如果你在终端亲手启动过 krfb，「扫描」会把它导入为
-   完全可管理的虚拟屏，密码一并接管。
+1. **新建虚拟屏** —— 点「新建」，指定名称、分辨率（预设或自定义）、缩放与端口。
+   对话框中显示将要执行的完整命令行。
+2. **启动** —— 程序启动 `krfb-virtualmonitor`，随后最多等待 8 秒，直到 KWin 中确实
+   出现 `Virtual-<名称>` 输出，此时才判定为「运行中」。若 KWin 覆写了请求的缩放值，
+   程序会通过 `kscreen-doctor` 显式修正，并将实际生效值回读进详情面板。
+3. **连接** —— 任何 VNC 客户端连接 `localhost:<端口>`，使用对话框中生成（或输入）的
+   密码，详情面板可随时查看。
+4. **关闭 GUI** —— 虚拟屏继续运行；再次打开程序时全部重新纳管，日志保留。
+5. **纳管未托管的进程** —— 在终端手动启动的 krfb 可由「扫描」导入为完全可管理的
+   虚拟屏，密码一并接管。
 
-登录自启是设置里的一个开关：打开后，登录时 GUI 以托盘模式启动，并恢复所有
-标记为「期望运行」的虚拟屏。它刻意只写**一个应用级自启项**，而不是每个虚拟屏
-一个 `.desktop`——后者需要把 `--password` 明文写进 0644（任何人可读）的桌面文件，
-等于白做密钥环加密。改为启动 GUI 自身，密码就始终不经手磁盘明文。
-（KDE 的自启动生成器从该条目派生的 unit 恰好是 `ExitType=cgroup`，属于安全情况——
-见下面的 cgroup 说明。）
+登录自启是「设置」中的一个开关：开启后，登录时 GUI 以托盘模式启动，并恢复所有标记为
+「期望运行」的虚拟屏。它只写入**一个应用级自启条目**，而不是为每个虚拟屏写一个
+`.desktop` 文件：后者需要把 `--password` 明文写入权限为 `0644` 的桌面文件，从而使
+密钥环加密失去意义。改为启动 GUI 自身后，密码始终不会以明文形式落盘。
 
 ## 架构
 
@@ -139,41 +152,51 @@ krfb_gui/
   models.py                 Screen（配置）/ Runtime（运行态）/ ProcInfo
   store.py                  原子 JSON 持久化（临时文件 + fsync + rename）
   proctools.py              纯 /proc 读取：starttime、僵尸、端口、argv 解析
-  envtools.py               清洗过的子进程环境——起外部命令的唯一入口
-  kscreen.py                解析 kscreen-doctor；回读真实输出状态
+  envtools.py               清洗过的子进程环境——启动外部命令的唯一入口
+  kscreen.py                解析 kscreen-doctor；回读实际输出状态
   manager.py                生命周期：启停/状态判定/纳管认领/环境自检
-  secrets.py                KDE 钱包客户端；带硬超时，降级为仅会话内存，绝不阻塞
+  secrets/                  密码存储：KDE 钱包 / 系统密钥环 / 内置加密库三个后端，
+                            共用一层门面；带硬超时与非阻塞回落
+  prefs.py                  界面偏好（语言、关窗行为、选定的密码库）
+  i18n/                     11 种语言的词条表
   autostart.py              单个应用级 .desktop 开机自启
   ui/                       主窗口、列表、详情面板、对话框、日志窗口、
                             主题、内嵌 SVG 图标、矢量绘制
 tests/
   test_persistence.py       两进程验证「GUI 退出后虚拟屏仍在且能重新接管」
+  test_i18n.py              词条完整性（11 种语言）与源码漏译扫描
+  test_vault.py             内置加密库：KDF/持久化/篡改/重置语义
+  test_backends.py          密码库选择、回落链、迁移与合并逻辑
   test_child_env.py         打包版子进程环境回归
   test_process_state.py     僵尸进程存活判定回归
 ```
 
 两条贯穿全局的设计规则：
 
-**配置与运行态分文件存放。** `Screen` 是用户意图，只在改设置时写盘；`Runtime`
-是观察结果（pid、实测分辨率），每次进程事件都会变。混在一起会让每次轮询都重写
-配置文件，两个 GUI 实例还会互相覆盖对方的更新。
+**配置与运行态分文件存放。** `Screen` 表示用户意图，仅在修改设置时写盘；`Runtime`
+表示观察结果（pid、实际生效值），每次进程事件都会更新。两者混存会导致每次轮询都重写
+配置文件，并允许两个 GUI 实例互相覆盖更新。
 
-**数据模块一律不 import Qt。** `manager`、`store`、`proctools`、`kscreen`、
-`envtools`、`secrets`、`autostart` 是纯 Python，可单独测试；只有 `ui/` 依赖 PySide6。
+**数据模块不 import Qt。** `manager`、`store`、`proctools`、`kscreen`、`envtools`、
+`secrets`、`autostart` 均为纯 Python，可独立测试；只有 `ui/` 依赖 PySide6。
 
 ## 存储位置
 
 | 内容 | 路径 | 权限 |
 |---|---|---|
 | 虚拟屏配置（不含密码） | `~/.config/krfb-virtualmonitor-gui/screens.json` | `0600` |
-| 运行态（pid、实测值） | `~/.local/state/krfb-virtualmonitor-gui/runtime.json` | `0600` |
+| 运行态（pid、实际生效值） | `~/.local/state/krfb-virtualmonitor-gui/runtime.json` | `0600` |
 | 每个虚拟屏的日志 | `~/.local/state/krfb-virtualmonitor-gui/logs/<id>.log` | `0600` |
-| 密码 | KDE 钱包（`kdewallet`，走 `org.kde.KWallet`） | — |
+| 密码 | KDE 钱包 / 系统密钥环 / 内置加密库（在设置中选择） | — |
+| 内置加密库（仅选用时存在） | `~/.local/share/krfb-virtualmonitor-gui/vault.db` | `0600` |
 | 自启项 | `~/.config/autostart/krfb-virtualmonitor-gui.desktop` | `0644` |
 
-密码存在 KDE 钱包标准的「Passwords」文件夹里，键是虚拟屏的稳定 UUID——这也正是
-身份判定从不依赖 pid 的原因。（从旧版本升级：首次读取时会顺手把还留在
-freedesktop Secret Service 里的密码搬进钱包，**只读不删**。）
+在每种密码库中，密码都以虚拟屏的稳定 UUID 为键——这也是身份判定从不依赖 pid 的原因。
+在 KDE 钱包中它们存放于标准的「Passwords」文件夹；在内置加密库中每个值单独加密，
+明文为 `id + 分隔符 + 密码`，因此把一行的密文复制到另一行会被拒绝。主密码本身不落盘，
+只保存用派生密钥另一部分算出的校验值。忘记主密码后数据无法恢复：重置会删除库中全部
+内容，且必须先通过一道算术验证确认。从旧版本升级的安装，可在「设置 → 密码存储」中
+迁移仍由原先密码库保存的数据；除非明确要求，不会删除任何内容。
 
 ## 测试
 
@@ -185,108 +208,119 @@ freedesktop Secret Service 里的密码搬进钱包，**只读不删**。）
 .venv/bin/python tests/test_persistence.py --phase b
 ```
 
-两个阶段跑在**两个独立的 Python 进程**里——这正是重点：只有这样才能真正验证
-「GUI 退出后虚拟屏还在，且能被新进程重新接管」。测试配置写在
-`/tmp/krfb-virtualmonitor-gui-test`（可用 `KRBFTEST_DIR` 改），不碰你的真实配置。
+两个阶段运行在**两个独立的 Python 进程**中，这是唯一能够验证「虚拟屏在 GUI 退出后
+仍然存在，且能被新进程接管」的方式。测试状态写入
+`/tmp/krfb-virtualmonitor-gui-test`（可用 `KRBFTEST_DIR` 修改），不会触碰真实配置。
 
-另有两条不需要构建、不弹窗口、不依赖显示环境的回归测试：
+其余测试套件不需要显示环境，也不需要构建：
 
 ```bash
-.venv/bin/python tests/test_child_env.py      # 打包版子进程环境
-.venv/bin/python tests/test_process_state.py  # 僵尸进程不能算「运行中」
+.venv/bin/python tests/test_i18n.py          # 词条完整性与一致性
+.venv/bin/python tests/test_vault.py         # 内置加密库 KDF/持久化/重置
+.venv/bin/python tests/test_backends.py      # 密码库选择、迁移与合并
+.venv/bin/python tests/test_child_env.py     # 打包版子进程环境
+.venv/bin/python tests/test_process_state.py # 僵尸进程不能算「运行中」
 ```
 
+`test_i18n.py` 解析源码中每一处 `tr()` 调用，校验其字面量在全部词条表中存在且占位符
+一致。`test_vault.py` 固定 KDF 参数，并跨进程验证持久化、篡改拒绝与重置语义。
+`test_backends.py` 用内存后端覆盖密码库选择、回落链、迁移与合并计划。
 `test_child_env.py` 模拟 PyInstaller 注入的 `LD_LIBRARY_PATH`，断言
-`kscreen-doctor` / `krfb --version` 仍能正常出结果，并扫描源码中任何绕过清洗的
-裸 `subprocess` 调用；`test_process_state.py` 用真正的僵尸子进程断言存活判定规则。
+`kscreen-doctor` 与 `krfb --version` 仍能正常工作，并扫描源码中任何绕过环境清洗的
+`subprocess` 调用。`test_process_state.py` 启动真实僵尸进程，并据此断言存活判定规则。
 
-## 工程笔记
+## 技术说明
 
-这个项目真正有意思的地方，是它必须直面的那些失败模式。下面每一条都在真机上实测
-复现过，都有对应的修复，能补回归测试的都补了。
+以下约束均在实际环境中验证确认，实现中都有对应处理，多数配有回归测试。
 
-### 僵尸进程会一直被当成「运行中」
+### 僵尸进程会被判定为「运行中」
 
-krfb 收到 `SIGTERM` 后 ~1 秒内就退出，KWin 那边 ~3 秒就摘掉虚拟屏——而界面却
-显示「运行中」超过一分钟。原因：krfb 是本程序的子进程，而父进程从不 `waitpid`，
-退出后它变成**僵尸**——`/proc/<pid>/stat` 还在、starttime 也不变，身份校验照样
-通过。真正的回收只发生在下一次创建子进程时（`subprocess` 顺手做 `_cleanup()`）。
-对策：存活判定额外排除状态字符 `Z`；并且「停止」这个用户意图**先记**再做身份
-校验——僵尸的 `/proc/<pid>/exe` 已经读不到，身份校验必然失败，但「用户不要它
-跑了」这件事不能丢，否则界面会把它当异常退出、弹出误导性的崩溃横幅。
+krfb 收到 `SIGTERM` 后约 1 秒内退出，KWin 约 3 秒后移除虚拟输出，但已退出而未回收的
+进程会变为僵尸：`/proc/<pid>/stat` 仍然存在，`starttime` 不变，因此身份校验仍会通过。
+由于 krfb 是 GUI 的子进程，它只会在下一次创建子进程时被顺带回收。
 
-### `--scale` 参数基本是无效的
+*处理方式：* 存活判定额外排除状态字符 `Z`；同时「停止」这一用户意图在身份校验之前
+记录。僵尸进程的 `/proc/<pid>/exe` 不可读，身份校验必然失败，但用户意图仍须被尊重，
+否则界面会弹出错误的崩溃提示。
 
-实测请求 `--scale 1.25` 和 `1.5`，KWin 一律给 **1.75**。原因：KWin 在
-`kwinoutputconfig.json` 里为虚拟输出持久化了一份配置，而**每个新建的虚拟显示器
-都会拿到同一个 UUID**——于是那份陈旧配置永远压过命令行请求值。对策：建成之后再用
-`kscreen-doctor output.<连接名>.scale.<值>` 显式设置一遍，然后回读真实值。
-界面上的「请求」与「实际生效」分开显示，不一致时标黄——只显示请求值就是在骗人。
+### `--scale` 会被 KWin 持久化的输出配置覆盖
 
-### 打开钱包这一步可能永远不返回
+KWin 在 `kwinoutputconfig.json` 中持久化每个输出的配置，而每个新建的虚拟显示器都会
+获得同一个 UUID，该 UUID 上的旧配置优先于命令行请求值，因此请求 1.25 或 1.5 的缩放
+实际生效值均为 1.75。
 
-kwalletd 的 `open()` 会弹钱包密码框，而 **D-Bus 调用本身没有任何超时**。如果
-提示框弹不出来（无显示环境、从 systemd unit 启动、prompter 异常），这个调用就
-永远挂着。对策：探测只用不可能弹框的方法（`isEnabled` / `isOpen`），所有钱包调用
-丢进 daemon 线程并带 2 秒超时，**可能弹框的操作（open）只允许出现在显式的解锁
-路径里，绝不进轮询/刷新路径**。钱包始终没解开就降级为「仅本次会话内存」并在界面
-明确标注。**启动路径永远不依赖钱包成功。**
-（用 `threading.Thread` 而不是 `ThreadPoolExecutor`——后者会在解释器退出时 join
-工作线程，被阻塞的线程会把整个程序拖住，正好是要避免的失败模式。）
+*处理方式：* 输出出现后，使用
+`kscreen-doctor output.<连接名>.scale.<值>` 显式设置缩放，随后回读实际生效值。界面将
+请求值与实际生效值分别显示，并标出不一致的情况。
 
-### VNC 密码只有前 8 个字符有效
+### `kwalletd` 的解锁调用可能永不返回
 
-krfb 链接的是 libvncserver，用的是经典 VNC DES 认证——**只取密码前 8 个字符**。
-所以密码生成器只生成 8 位，界面也如实说明。给你一个 32 位密码却只有 8 位有效，
-那是虚假的安全感。
+`open()` 会使 kwalletd 显示自身的密码提示框，而 D-Bus 调用本身没有超时。若提示框无法
+显示（无头会话、systemd unit 启动、提示程序异常），该调用将永久挂起。
 
-### 密码对本机其他用户可见
+*处理方式：* 探测只使用不会触发提示的调用（`isEnabled`、`isOpen`）；所有钱包调用都在
+daemon 线程中执行并带 2 秒超时；任何可能触发提示的操作都限定在显式解锁路径中，绝不
+进入轮询路径。钱包始终未解锁时，程序使用「功能特性」一节所述的回落链。启动路径不依赖
+钱包调用成功。此处使用 daemon 线程而非 `ThreadPoolExecutor`：后者会在解释器退出时
+join 工作线程，被阻塞的线程会拖住整个程序，正是需要避免的情形。
 
-密码是通过 `--password` 传的，而 `/proc/<pid>/cmdline` 是 `0444`（任何人可读）。
-krfb 没有 stdin/env 传参方式，也没有只绑 loopback 的选项——这是它的固有限制，
-本程序无法在命令行层面消除，只能在界面上如实告知。
+### VNC 认证仅使用 8 个字符
 
-### 启动「成功」不等于虚拟屏建成了
+krfb 链接 libvncserver，采用经典 VNC DES 认证：只使用密码的前 8 个字符。
 
-krfb 会报 portal 错误却仍然监听端口。判定成功的唯一可靠证据是 KWin 里真的出现了
-`Virtual-<名称>` 输出。当 `kscreen-doctor` 缺失或不可用时，判定退化为「端口在
-监听」——这是更弱但诚实的信号，宁可判得弱一点，也不能在虚拟屏明明起来了的情况下
-误报失败。
+*处理方式：* 密码生成器固定生成 8 个字符，界面明确说明这一上限。更长的密码不会带来
+额外熵。
 
-### 打包版会毒化子进程环境
+### 密码可经 `/proc/<pid>/cmdline` 被其他本机用户读取
 
-PyInstaller 的 Linux 启动器会往 GUI **自己**的环境里注入
-`LD_LIBRARY_PATH=<包内 _internal>:...`，好让它加载包内的 Qt6。这个变量会**继承给
-每一个子进程**——而本程序要调用的外部命令（`krfb-virtualmonitor`、
-`kscreen-doctor`、`systemctl`）全是*系统* Qt 程序，继承过去就会绑到错误的
-libQt6 上直接 abort（SIGABRT、stdout 全空）。后果很严重：`list_outputs()` 永远
-返回空，启动判定永久失败，8 秒后**误报超时**，还会把运行记录抹掉、进程变成孤儿。
+密码通过 `--password` 传递，而 `/proc/<pid>/cmdline` 的权限为 `0444`（任何用户可读）。
+krfb 既不提供 stdin/环境变量传参方式，也不提供仅绑定 loopback 的选项，因此无法在
+该工具层面消除。
 
-对策：严格的环境变量白名单（`constants.py` 的 `ENV_PASSTHROUGH`）剥掉
-`LD_LIBRARY_PATH` / `PYTHONPATH` / `QT_*` 等，且**所有**外部命令统一走
-`envtools.run_helper()`。`tests/test_child_env.py` 里有一条静态规则守着「不许再
-出现裸的 `subprocess` 调用」。另外两条相关的兜底：`kscreen-doctor` 完全用不了时，
-启动判定按环境自检承诺过的行为退化为只检查端口；校验失败时若进程其实还活着，
-只记错误、**不清**进程身份。
+*处理方式：* 界面如实披露这一暴露面，不做其他暗示。
 
-### systemd cgroup 会连带杀掉所有虚拟屏
+### 启动成功不等于虚拟输出已创建
 
-`setsid()` 能防 `SIGHUP`，防不住 cgroup 级的清理。若 GUI 由
-`KillMode=control-group` + `ExitType=main` 的 unit 启动，GUI 一退出，systemd 就会
-SIGTERM 整个 cgroup——所有虚拟屏陪葬。程序启动时会检测这种情况并说明改法
-（改用 `ExitType=cgroup`，或照常从桌面启动器启动）。
+krfb 可能在报告 portal 错误的同时仍然监听端口。判定成功的唯一可靠依据是 KWin 中确实
+出现了 `Virtual-<名称>` 输出。
+
+*处理方式：* 当 `kscreen-doctor` 不可用或状态异常时，判定退化为检查端口监听——这是较弱
+但如实的信号，选择它是为了确保正常工作的虚拟屏不会被误报为失败。
+
+### 打包版会将其捆绑库路径传给子进程
+
+PyInstaller 的 Linux 启动器会向程序自身环境注入
+`LD_LIBRARY_PATH=<包内 _internal>:...`，以便加载捆绑的 Qt6。每个子进程都会继承它，
+而本程序调用的所有外部命令（`krfb-virtualmonitor`、`kscreen-doctor`、`systemctl`）
+都是*系统* Qt 程序，加载到版本不匹配的 libQt6 后会以 `SIGABRT` 中止。后果严重：
+`list_outputs()` 持续返回空，启动校验在 8 秒后超时，运行记录被丢弃，进程成为孤儿。
+
+*处理方式：* 通过严格的环境变量白名单（`constants.py` 中的 `ENV_PASSTHROUGH`）剥离
+`LD_LIBRARY_PATH`、`PYTHONPATH`、`QT_*` 等变量，且所有外部命令统一经由
+`envtools.run_helper()` 执行。`tests/test_child_env.py` 中的静态检查会在出现裸
+`subprocess` 调用时使测试失败。相关兜底：`kscreen-doctor` 完全不可用时，启动校验退化
+为端口检查；校验失败但进程实际仍存活时，不会清除进程身份。
+
+### systemd cgroup 清理会连带终止所有虚拟屏
+
+`setsid()` 可以抵御 `SIGHUP`，但无法抵御 cgroup 级别的清理。若 GUI 由配置了
+`KillMode=control-group` 与 `ExitType=main` 的 unit 启动，GUI 退出时 systemd 会向整个
+cgroup 发送 `SIGTERM`，所有虚拟屏随之终止。
+
+*处理方式：* 启动时检测该情形，并报告解决办法（改用 `ExitType=cgroup`，或照常从桌面
+启动器启动）。
 
 ## 已知限制
 
-- **仅限 Wayland + KWin。** 虚拟显示器需要合成器支持，目前只有 KWin 实现了。
-- **密码对本机其他用户可见**（经 `/proc/<pid>/cmdline`，krfb 的固有限制，
-  界面已如实标注）。
-- **VNC 认证只使用 8 个字符**，密码再长也一样。
-- **打包版里**日志窗口的「打开所在目录」走 `QDesktopServices` → `xdg-open`，
-  是 Qt 自己 fork 的子进程，拿不到清洗过的环境，仍会带着包内 `LD_LIBRARY_PATH`
-  去起文件管理器（可能起不来）。影响面就这一个按钮。
-- **切换运行方式要重新开关一次自启动**：自启项里写的是当时那个启动器的路径，
-  从源码版切到打包版（或反过来）后，需要在设置里关掉再打开才会改写。
+- **仅支持 Wayland + KWin。** 虚拟显示器需要合成器支持，目前只有 KWin 实现了该能力。
+- **密码可经 `/proc/<pid>/cmdline` 被其他本机用户读取**（krfb 的固有限制，界面已如实
+  标注）。
+- **VNC 认证只使用 8 个字符**，与密码长度无关。
+- **在打包版中**，日志窗口的「打开所在目录」按钮经由 `QDesktopServices` →
+  `xdg-open` 执行，后者是 Qt 内部 fork 的子进程，无法接收清洗过的环境，因此仍会携带
+  包内的 `LD_LIBRARY_PATH`，文件管理器可能无法启动。影响范围为该按钮。
+- **切换运行方式后需要重新开关一次自启动**：自启条目记录的是写入它的那个启动器的
+  路径，从源码版切换到打包版（或反向）后，需在设置中关闭再开启才会改写。
 
 ## 许可证
 

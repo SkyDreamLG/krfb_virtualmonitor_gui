@@ -29,12 +29,19 @@ def _xdg(env_var: str, fallback: str) -> Path:
 # 避免每次进程事件都重写配置文件，也避免两个实例互相覆盖更新。
 CONFIG_DIR = _xdg("XDG_CONFIG_HOME", ".config") / APP_ID
 STATE_DIR = _xdg("XDG_STATE_HOME", ".local/state") / APP_ID
+# 应用自己的数据（内置加密库）。放 DATA_HOME 而不是 CONFIG：既不该跟着配置同步上云，
+# 也不属于"可以清理的运行态"。
+DATA_DIR = _xdg("XDG_DATA_HOME", ".local/share") / APP_ID
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/{APP_ID}")
 
 SCREENS_FILE = CONFIG_DIR / "screens.json"
 RUNTIME_FILE = STATE_DIR / "runtime.json"
-# 界面偏好（目前只有语言）。i18n 模块自己读写这个文件 —— 它不能 import store。
+# 界面偏好（语言、关窗行为、密码库选择）。走 prefs 模块读写 —— i18n 要用它，
+# 而 i18n 不能 import store（会成环）。
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
+
+# 内置加密密码库（SQLite + Fernet）。文件权限由创建时显式 os.open(0o600) 决定。
+VAULT_FILE = DATA_DIR / "vault.db"
 LOG_DIR = STATE_DIR / "logs"
 LOCK_FILE = RUNTIME_DIR / f"{APP_ID}.lock"
 AUTOSTART_FILE = _xdg("XDG_CONFIG_HOME", ".config") / "autostart" / f"{APP_ID}.desktop"

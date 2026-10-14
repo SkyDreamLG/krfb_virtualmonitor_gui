@@ -52,9 +52,19 @@ a = Analysis(
     pathex=[str(ROOT)],
     binaries=[],
     datas=datas,
-    # 这两个 import 都在函数体内（secrets.py 的 _read_legacy / _connect），
-    # 静态分析能找到，显式列出只是保险，防止将来被挪进 try/except 里而漏掉。
-    hiddenimports=["secretstorage", "jeepney"],
+    # 这几个 import 都在函数体内（各后端的 _connect / _decrypt 等），静态分析
+    # 能找到，显式列出只是保险，防止将来被挪进 try/except 里而漏掉：
+    #   * secretstorage / jeepney → 系统 Secret Service 后端、KDE 钱包后端的 D-Bus
+    #   * cryptography            → 内置加密库的 Fernet
+    #   * krfb_gui.secrets.*      → 三个后端模块（都是静态 import，写上无妨）
+    hiddenimports=[
+        "secretstorage",
+        "jeepney",
+        "cryptography",
+        "krfb_gui.secrets.kwallet",
+        "krfb_gui.secrets.secret_service",
+        "krfb_gui.secrets.builtin",
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

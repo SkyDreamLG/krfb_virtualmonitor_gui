@@ -23,13 +23,20 @@ fi
 
 mkdir -p "$APP_DIR" "$ICON_DIR" "$BIN_DIR"
 
-# 一个稳定入口，避免 .desktop 里写死路径。
-# 优先用 packaging/build.sh 产出的独立可执行程序；没构建过才回退到源码 + .venv。
-BUNDLED="$ROOT/dist/$APP_ID/$APP_ID"
+# 一个稳定入口，避免 .desktop 里写死路径。优先用 packaging/build.sh 产出的
+# 独立可执行程序（单文件优先，其次目录版）；没构建过才回退到源码 + .venv。
+# 单文件在 dist/，目录版在 dist/onedir/。
+# 没构建过才回退到源码 + .venv。
+# 单文件版与目录版都认：单文件在 dist/，目录版在 dist/onedir/
+SINGLE="$ROOT/dist/$APP_ID"
+ONEDIR="$ROOT/dist/onedir/$APP_ID/$APP_ID"
 cat > "$BIN_DIR/$APP_ID" <<EOF
 #!/usr/bin/env bash
-if [[ -x "$BUNDLED" ]]; then
-    exec "$BUNDLED" "\$@"
+if [[ -x "$SINGLE" ]]; then
+    exec "$SINGLE" "\$@"
+fi
+if [[ -x "$ONEDIR" ]]; then
+    exec "$ONEDIR" "\$@"
 fi
 exec "$ROOT/.venv/bin/python" "$ROOT/main.py" "\$@"
 EOF
@@ -79,8 +86,10 @@ echo "  菜单项  $APP_DIR/$APP_ID.desktop"
 echo "  图标    $ICON_DIR/$APP_ID.svg"
 echo "  启动器  $BIN_DIR/$APP_ID"
 echo
-if [[ -x "$BUNDLED" ]]; then
-    echo "入口指向：打包版（$BUNDLED）"
+if [[ -x "$SINGLE" ]]; then
+    echo "入口指向：打包版·单文件（$SINGLE）"
+elif [[ -x "$ONEDIR" ]]; then
+    echo "入口指向：打包版·目录（$ONEDIR）"
 else
     echo "入口指向：源码版（$ROOT/.venv/bin/python main.py）"
     echo "  提示：跑一次 packaging/build.sh 构建独立可执行程序后重跑本脚本，入口会自动切过去。"

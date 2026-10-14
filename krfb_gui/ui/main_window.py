@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QMessageBox,
+    QProgressDialog,
     QPushButton,
     QSplitter,
     QSystemTrayIcon,
@@ -27,11 +28,20 @@ from .. import envtools, prefs, proctools
 from ..i18n import join_list, tr, trf
 from ..manager import Manager
 from ..models import Runtime, Screen, ScreenState
-from ..secrets import SecretTimeout, Secrets, SecretsStatus
+from ..prefs import BACKEND_BUILTIN, BACKEND_KWALLET
+from ..secrets import (
+    SecretTimeout,
+    Secrets,
+    SecretsStatus,
+    UnlockKind,
+    UnlockResult,
+    backend_label,
+)
 from ..store import Store
 from . import icons
+from .confirm import choose_merge_rule, choose_store_data, destructive_action
 from .detail_pane import DetailPane
-from .dialogs import AdoptDialog, PasswordPrompt, SettingsDialog
+from .dialogs import AdoptDialog, MasterPasswordDialog, PasswordPrompt, SettingsDialog
 from .log_viewer import LogViewer
 from .screen_dialog import ScreenDialog
 from .screen_list import ScreenList
@@ -159,9 +169,23 @@ class NoticeBar(QWidget):
         painter.drawRoundedRect(rect.left() + 1, rect.top() + 6, 3, rect.height() - 12, 1.5, 1.5)
 
 
+class _MigrationCancelled(Exception):
+    """用户在迁移进度框里点了取消。"""
+
+
+def _format_time(stamp: float) -> str:
+    """时间戳 → 给人看的一行。ISO 风格、不带语言差异（各语言都一样读）。"""
+    return time.strftime("%Y-%m-%d %H:%M", time.localtime(stamp))
+
+
 class MainWindow(QMainWindow):
-    # 后台解锁结束 → 主线程收尾（跨线程 emit 会被 Qt 排队）
-    unlock_finished = Signal(bool)
+    # 后台扫描/解锁结束 → 主线程收尾（跨线程 emit 会被 Qt 排队）。
+    # 取值："ok"（已解锁或无需解锁）/ "needs_password"（内置库要主密码）/ "failed"
+    unlock_finished = Signal(str)
+    # 后台重新扫描结束（设置里的"立即重新检测"、打开设置时的自动重扫）
+    scan_finished = Signal()
+    # 「哪些库可用」变了（轮询里的后台复检发现）
+    availability_changed = Signal()
 
     def __init__(self, palette: Palette, store: Store, secrets: Secrets,
                  manager: Manager, start_in_tray: bool = False) -> None:
@@ -189,10 +213,16 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(*C.WINDOW_MIN_SIZE)
         self.resize(*C.WINDOW_DEFAULT_SIZE)
 
-        # 后台申请解锁密钥环的相关状态
+        # 后台扫描/解锁的相关状态
         self._unlock_running = False
-        self._unlock_explicit = False   # 是用户点"解锁密钥环"发起的吗
+        self._unlock_explicit = False   # 是用户点"解锁"发起的吗
         self._pending_start_all = False
+        self._master_prompt_declined = False   # 本次会话用户拒绝过输主密码
+        self._backend_alerted = False          # "选中的库不可用"只提醒一次
+        self._avail_running = False            # 后台"哪些库可用"复检在跑吗
+        self._start_in_tray = start_in_tray
+        self._settings_dialog: SettingsDialog | None = None
+        self._ticks = 0
 
         self._build_ui()
         self._build_tray()
@@ -203,52 +233,85 @@ class MainWindow(QMainWindow):
         self._timer.start()
 
         self.unlock_finished.connect(self._on_unlock_finished)
+        self.scan_finished.connect(self._on_scan_finished)
+        self.availability_changed.connect(self._on_availability_changed)
         self._secrets.probe()
         self._refresh()
         self._startup_report(start_in_tray)
 
-    # ---------------------------------------------------------------- 密钥环
-    def _request_unlock(self, *, automatic: bool) -> None:
-        """申请解锁密钥环 —— 锁着的话读不到已保存的密码。
+    # ---------------------------------------------------------------- 密码库
+    def _known_screen_ids(self) -> list[str]:
+        return [screen.id for screen in self._store.sorted_screens()]
 
-        `unlock()` 会弹系统提示框（ksecretd / gnome-keyring）并可能等上几十秒，
-        所以整个调用丢进后台线程，界面照常可用；超时仍在 `secrets` 那边兜底，
-        最坏退化成"本次会话内存"。
+    def _request_unlock(self, *, automatic: bool) -> None:
+        """扫描所有密码库并按需申请解锁。整个扫描必须在后台 —— 三个后端 ×
+        D-Bus 同步跑会把窗口冻住几秒。
+
+        `unlock()` 还可能弹系统提示框（KDE 钱包 / 密钥环）并等上几十秒，
+        同样不能占着主线程。
         """
-        if self._secrets.status is not SecretsStatus.LOCKED:
-            return
         if self._unlock_running:
-            # 已经有一次在等系统提示框了。用户此刻又点了一次按钮 → 升级成
-            # "显式"，让结果弹框告诉他，而不是只飘一条通知。
+            # 已经有一次在跑。用户此刻又点了按钮 → 升级成"显式"，
+            # 让结果弹框告诉他，而不是只飘一条通知。
             self._unlock_explicit = self._unlock_explicit or not automatic
             return
-        if automatic and not self._store.screens:
-            return  # 一个虚拟屏都没有，没必要为此弹钥匙串
+        if automatic and self._master_prompt_declined:
+            return  # 用户这次会话已经拒绝过输入主密码了，别再弹
         self._unlock_explicit = not automatic
         self._unlock_running = True
-        threading.Thread(target=self._unlock_worker, daemon=True,
-                         name="keyring-unlock").start()
+        threading.Thread(target=self._secrets_worker, daemon=True,
+                         name="secrets-init").start()
 
-    def _unlock_worker(self) -> None:
-        unlocked = self._secrets.try_unlock()
-        # 跨线程 emit：Qt 会把它排队到主线程，界面操作只在主线程做
-        self.unlock_finished.emit(unlocked)
+    def _secrets_worker(self) -> None:
+        """后台：扫描 → 按后端类型决定怎么解锁。
 
-    def _on_unlock_finished(self, unlocked: bool) -> None:
+        整段包在 try 里：**抛出去就没人清 `_unlock_running` 了**，而它是"扫描/
+        解锁在飞"的闸门 —— 卡住会让后面的复检、重扫全都不再发生。
+        """
+        try:
+            self._scan_and_unlock()
+        finally:
+            self._unlock_running = False
+
+    def _scan_and_unlock(self) -> None:
+        self._secrets.scan(self._known_screen_ids())
+        kind = self._secrets.unlock_kind
+        if kind is UnlockKind.APP_SECRET:
+            self.unlock_finished.emit("needs_password")
+            return
+        if kind is UnlockKind.SYSTEM_PROMPT:
+            self.unlock_finished.emit("ok" if self._secrets.try_unlock() else "failed")
+            return
+        status = self._secrets.status
+        self.unlock_finished.emit("ok" if status is SecretsStatus.OK else "failed")
+
+    def _on_unlock_finished(self, state: str) -> None:
         self._unlock_running = False
         explicit, self._unlock_explicit = self._unlock_explicit, False
-        if self._pending_start_all:
-            # 托盘自启时等解锁完再启动屏幕：锁着读不到密码，起了也白起
-            self._pending_start_all = False
-            self._on_start_all()
-        self._refresh()
 
-        if unlocked:
+        if state == "needs_password":
+            # 内置库要主密码。普通启动不主动打断（先用通知条 + 可点按钮），
+            # 但用户明确点了按钮、或者托盘自启（不弹就没人能恢复虚拟屏）时必须弹。
+            if explicit or self._start_in_tray:
+                if self._start_in_tray and not self.isVisible():
+                    self._show_window()      # 弹框前先把窗口摆出来
+                self._ask_master_password()
+                return
+            self._drain_pending_start()
+            self._refresh()
+            self._notify_needs_master_password()
+            return
+
+        self._drain_pending_start()
+        self._refresh()
+        # 扫描已经落地：这时才知道"选中的库是不是不可用了"。有数据却没了的
+        # 情况必须弹窗说清楚，否则用户只会以为密码全丢了。
+        self._check_backend_alerts()
+
+        if state == "ok":
             if explicit:
-                QMessageBox.information(
-                    self, tr("Keyring"),
-                    tr("Unlocked. Passwords will be saved to the keyring."),
-                )
+                QMessageBox.information(self, tr("Keyring"),
+                                        tr("Unlocked. Passwords will be saved to the keyring."))
             return
 
         message = tr("Unlock failed or timed out. Passwords can still be used for "
@@ -260,6 +323,176 @@ class MainWindow(QMainWindow):
             self._notice_mode = "info"
             self._notice.show_message(message, "", "warning")
             QTimer.singleShot(6000, self._notice.fade_out)
+
+    def _drain_pending_start(self) -> None:
+        if self._pending_start_all:
+            # 托盘自启时等扫描+解锁完再启动屏幕：读不到密码，起了也白起
+            self._pending_start_all = False
+            self._on_start_all()
+
+    def _notify_needs_master_password(self) -> None:
+        self._notice_mode = "secrets"
+        self._notice.show_message(
+            tr("Enter the master password to read saved passwords"),
+            tr("Unlock"), "warning",
+        )
+
+    # ---------------------------------------------------------------- 主密码
+    def _run_off_thread(self, func, timeout: float = 35.0):
+        """在后台线程跑 func 并等它回来（带硬上限）。只在模态流程里这么用。"""
+        box: dict[str, object] = {}
+        done = threading.Event()
+
+        def worker() -> None:
+            try:
+                box["value"] = func()
+            except BaseException:  # noqa: BLE001
+                box["value"] = None
+            finally:
+                done.set()
+
+        threading.Thread(target=worker, daemon=True, name="secrets-modal").start()
+        if not done.wait(timeout):
+            return None
+        return box.get("value")
+
+    def _ask_master_password(self) -> bool:
+        """要主密码直到成功 / 取消 / 出错。KDF 在后台线程里跑，界面不冻。
+
+        返回是否解锁成功。
+        """
+        error = ""
+        while True:
+            dialog = MasterPasswordDialog(self._palette, MasterPasswordDialog.UNLOCK,
+                                         error=error, parent=self)
+            if not dialog.exec():
+                self._master_prompt_declined = True
+                break
+            result = self._run_off_thread(
+                lambda: self._secrets.unlock_with_secret(dialog.secret))
+            if result is UnlockResult.OK:
+                break
+            if result is UnlockResult.WRONG_PASSWORD:
+                error = tr("Wrong master password")
+                continue
+            error = tr("Unlock failed or timed out. Passwords can still be used for "
+                       "this session, but must be re-entered after quitting.")
+            break
+
+        self._drain_pending_start()
+        self._refresh()
+        if self._secrets.status is not SecretsStatus.OK:
+            self._notify_needs_master_password()
+            return False
+        return True
+
+    def _create_vault(self, *, switch: bool = False) -> bool:
+        """建内置库并设主密码。返回是否建成。"""
+        error = ""
+        while True:
+            dialog = MasterPasswordDialog(self._palette, MasterPasswordDialog.CREATE,
+                                          error=error, parent=self)
+            if not dialog.exec():
+                return False
+            created, message = self._run_off_thread(
+                lambda: self._secrets.create_vault(dialog.secret))
+            if created:
+                break
+            error = message or tr("Could not create the vault")
+        self._refresh()
+        return True
+
+    def _on_vault_action(self, action: str) -> None:
+        """设置里的「设置/修改主密码」「重置加密库」。"""
+        if action == "create":
+            self._create_vault()
+        elif action == "change":
+            dialog = MasterPasswordDialog(self._palette, MasterPasswordDialog.CHANGE,
+                                          parent=self)
+            if not dialog.exec():
+                return
+            ok, message = self._run_off_thread(
+                lambda: self._secrets.change_master_password(dialog.old_secret,
+                                                             dialog.secret))
+            if ok:
+                QMessageBox.information(self, tr("Password storage"),
+                                        tr("The master password has been changed."))
+            else:
+                QMessageBox.warning(self, tr("Password storage"), message)
+        elif action == "reset":
+            if not destructive_action(
+                self, self._palette,
+                title=tr("Reset the built-in vault"),
+                text=tr("This deletes every password stored in the built-in vault."),
+                informative=tr("They cannot be recovered — not even with the master "
+                               "password. Only do this if you no longer need them."),
+                confirm_label=tr("Delete the vault"),
+            ):
+                return
+            self._secrets.reset_vault()
+            self._refresh()
+            self._notice_mode = "info"
+            self._notice.show_message(tr("The built-in vault has been reset"),
+                                      "", "accent")
+            QTimer.singleShot(4000, self._notice.fade_out)
+        self._refresh()
+
+    def _on_recheck(self) -> None:
+        """设置里的「立即重新检测」：后台重新扫描 + 刷新设置对话框。"""
+        self._scan_and_report()
+
+    def _scan_and_report(self) -> None:
+        """后台重新扫描。**不阻塞**：结果到了走 `scan_finished` 再刷新界面。"""
+        if self._unlock_running:
+            return
+        self._unlock_running = True
+        threading.Thread(target=self._scan_worker, daemon=True,
+                         name="secrets-scan").start()
+
+    def _scan_worker(self) -> None:
+        try:
+            self._secrets.scan(self._known_screen_ids())
+        finally:
+            # 同上：无论成败都要把闸门放开，否则界面再也不刷新了
+            self.scan_finished.emit()
+
+    def _on_scan_finished(self) -> None:
+        self._unlock_running = False
+        self._refresh()
+        if self._settings_dialog is not None:
+            self._settings_dialog.refresh_state()
+
+    def _check_backend_alerts(self) -> None:
+        """启动后的告警：选中的库突然不可用、但它里面确实存过密码。
+
+        不提示的话用户只会看到"密码全没了"。"""
+        backend = self._secrets.backend_key
+        if not backend or self._backend_alerted:
+            return
+        status = self._secrets.status
+        if status.usable or status is SecretsStatus.OK:
+            return
+        seen = prefs.store_seen().get(backend, 0)
+        if seen <= 0:
+            return
+        self._backend_alerted = True
+
+        name = backend_label(backend)
+        box = QMessageBox(self)
+        box.setWindowTitle(tr("Password store unavailable"))
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setText(trf("{store} holds {count} saved passwords but is unavailable "
+                        "right now.", store=name, count=seen))
+        box.setInformativeText(
+            tr("Enable it again in your system settings, or switch to another "
+               "store — switching does not copy the old passwords over, and "
+               "clearing the old store afterwards cannot be undone.")
+        )
+        open_settings = box.addButton(tr("Open settings"), QMessageBox.ButtonRole.AcceptRole)
+        box.addButton(tr("Later"), QMessageBox.ButtonRole.RejectRole)
+        box.exec()
+        if box.clickedButton() is open_settings:
+            self._on_settings()
 
     def _warnings(self, *, force: bool = False) -> list[str]:
         """环境检查结果。字符串由 manager 拼好（文案写死在代码里），所以语言
@@ -454,7 +687,46 @@ class MainWindow(QMainWindow):
         return self._store.get(screen_id) if screen_id else None
 
     # ---------------------------------------------------------------- 刷新
+    def _recheck_secrets(self) -> None:
+        """轮询里顺带做一次**廉价复检**：每 ~6 秒一轮。
+
+        两件事：
+          * 当前后端状态不是 OK 时探一次 —— 别的程序把密钥环解锁了，下一次复检
+            就把状态从"超时"拉回"已就绪"（"超时不等于不可用"的落地方式）；
+          * 后台刷一遍"哪些后端可用" —— KDE 钱包被关掉再打开之后，设置里的
+            「自动」得自己回来，光靠启动扫那一次它会永远消失。
+
+        探测内部都是**非阻塞抢锁**的，绝不会卡在被系统提示框占住的锁后面。
+        """
+        if self._unlock_running or self._ticks % 3:
+            return
+        if self._secrets.status is not SecretsStatus.OK and not (
+                self._backend_alerted
+                and not self._secrets.availability.get(self._secrets.backend_key, False)):
+            # 后者：已经提醒过"库不可用"，别每 6 秒探一次
+            if self._secrets.probe() is SecretsStatus.OK:
+                self._secrets.flush_pending()   # 锁定期间攒下的密码补写进去
+        if not self._avail_running:
+            self._avail_running = True
+            threading.Thread(target=self._availability_worker, daemon=True,
+                             name="secrets-availability").start()
+
+    def _availability_worker(self) -> None:
+        try:
+            if self._secrets.refresh_availability():
+                self.availability_changed.emit()
+        finally:
+            self._avail_running = False
+
+    def _on_availability_changed(self) -> None:
+        """可用集变了（钱包被关掉/打开）。列表跟着更新一次 —— 只在真有变化时
+        才发这个信号，所以不会每 6 秒去动一次下拉框。"""
+        if self._settings_dialog is not None:
+            self._settings_dialog.refresh_state()
+
     def _refresh(self) -> None:
+        self._ticks += 1
+        self._recheck_secrets()
         self._verify_pending()
         items = self._items()
 
@@ -815,25 +1087,217 @@ class MainWindow(QMainWindow):
             self._palette,
             # provider 而不是快照：语言切换后要重新拼一遍（文案是成品字符串）
             lambda: self._warnings(force=True),
-            self._secrets.status, self._secrets.status_detail,
-            self._krfb_version_source(), self,
+            self._secrets,
+            self._krfb_version_source(),
+            on_unlock=lambda: self._request_unlock(automatic=False),
+            on_backend_selected=self._switch_backend,
+            on_recheck=self._on_recheck,
+            on_vault_action=self._on_vault_action,
+            parent=self,
         )
-        dialog._unlock.clicked.connect(lambda: self._on_unlock(dialog))
+        self._settings_dialog = dialog
+        # 打开设置时后台重新扫一遍，免得看到一个过期的可用性列表
+        QTimer.singleShot(0, self._scan_and_report)
         dialog.exec()
+        self._settings_dialog = None
         # 无条件重刷：语言可能刚在对话框里被改过。retranslate 幂等且便宜。
         self.retranslate()
 
-    def _on_unlock(self, dialog: SettingsDialog) -> None:
-        """设置里的"解锁密钥环"。同样走后台：系统提示框可能等上几十秒，
-        同步调用会把界面冻住。结果由 _on_unlock_finished 弹框反馈。"""
-        self._secrets.probe()
-        dialog.accept()
-        if self._secrets.status is not SecretsStatus.LOCKED:
-            # 点按钮之前密钥环已经被解开了（比如用户在系统托盘里解过）
-            QMessageBox.information(self, tr("Keyring"), tr("Keyring ready"))
-            self._refresh()
+    # ---------------------------------------------------------------- 切换密码库
+    def _wipe_source(self, key: str, ids) -> None:
+        """迁移完成后问用户要不要清掉原库里的这些密码。"""
+        if not destructive_action(
+            self, self._palette,
+            title=tr("Clear the old password store"),
+            text=trf("Delete the {count} passwords from {store}?", count=len(ids),
+                     store=backend_label(key)),
+            informative=tr("They are now stored in the new store. Deleting them "
+                           "here cannot be undone — and any other application that "
+                           "uses that store will no longer find them either."),
+            confirm_label=tr("Delete them"),
+        ):
             return
-        self._request_unlock(automatic=False)
+        deleted, errors = self._secrets.wipe_backend(key, ids)
+        if errors:
+            QMessageBox.warning(self, tr("Password store"), "\n".join(errors[:5]))
+        self._notice_mode = "info"
+        self._notice.show_message(
+            trf("Deleted {count} passwords from the old store", count=deleted),
+            "", "accent")
+        QTimer.singleShot(4000, self._notice.fade_out)
+
+    def _switch_backend(self, key: str) -> bool:
+        """设置里换了密码库。返回是否真的切过去了（False = 用户取消）。
+
+        顺序：探目标 → 切过去 → 需要就先解锁 → 目标已有数据就让用户选保留谁
+        （保留目标的 / 用新数据覆盖 / 合并）→ 迁移 → 有失败就不提示清原库 → 收尾。
+        """
+        secrets = self._secrets
+        if key not in prefs.BACKENDS:
+            # 不是后端名就别往下走，免得一路走到 probe_backend(未知) 那种 KeyError
+            return False
+        ids = self._known_screen_ids()
+        previous = secrets.backend_key or ""
+        # 偏好可能是 auto（实际用的是 previous）→ 中途取消时要连偏好一起还原，
+        # 否则下一次启动会照着被写坏的偏好走。
+        previous_pref = prefs.password_backend()
+
+        # ① 目标必须可用
+        status = secrets.probe_backend(key)
+        if key != BACKEND_BUILTIN and status not in (
+                SecretsStatus.OK, SecretsStatus.LOCKED):
+            QMessageBox.warning(
+                self, tr("Password store"),
+                trf("{store} is not available right now.", store=backend_label(key)))
+            return False
+
+        # ② 目标是内置库且还没建 → 先建（要用户设主密码）
+        if key == BACKEND_BUILTIN and status is SecretsStatus.NO_VAULT:
+            if not self._create_vault(switch=True):
+                return False
+
+        # ③ 切过去（写偏好）；下面任何一步取消都会切回来
+        secrets.select(key)
+
+        # ④ 目标锁着 → 先解锁（绝不往锁着的库里迁移）
+        if secrets.status is SecretsStatus.NEEDS_PASSWORD:
+            if not self._ask_master_password():
+                self._rollback_backend(previous, previous_pref)
+                return False
+        elif secrets.status is SecretsStatus.LOCKED:
+            unlocked = self._run_off_thread(secrets.try_unlock)
+            if not unlocked:
+                QMessageBox.warning(self, tr("Password store"),
+                                    tr("The target store could not be unlocked."))
+                self._rollback_backend(previous, previous_pref)
+                return False
+            secrets.flush_pending()
+
+        # ⑤ 目标已经有数据 → 让用户决定保留哪一边（保留目标的 / 用新数据覆盖 / 合并）
+        existing = secrets.present_ids(key, ids) or []
+        source_ids = secrets.present_ids(previous, ids) if previous else None
+        if existing and source_ids:
+            stamp = secrets.last_modified(key)
+            when = (trf("last updated {time}", time=_format_time(stamp))
+                    if stamp else tr("that store does not report timestamps"))
+            choice = choose_store_data(
+                self, target=backend_label(key), source=backend_label(previous),
+                count=len(existing), when=when, moving=len(source_ids))
+            if choice == "cancel":
+                self._rollback_backend(previous, previous_pref)
+                return False
+            if choice == "target":
+                source_ids = []          # 用目标里的数据：一个字节都不写
+            elif choice == "merge":
+                picked = self._pick_merge(previous, key, source_ids)
+                if picked is None:
+                    self._rollback_backend(previous, previous_pref)
+                    return False
+                source_ids = picked
+            # "source" → 原样往下走：整批覆盖过去
+
+        # ⑥ 源库里还有数据 → 问是否迁移
+        leftover = ""
+        if source_ids:
+            copied, failed = self._migrate_passwords(previous, key, source_ids)
+            if failed:
+                QMessageBox.warning(
+                    self, tr("Password store"),
+                    trf("{count} passwords could not be moved:", count=len(failed))
+                    + "\n" + "\n".join(f"{sid}: {reason}"
+                                       for sid, reason in list(failed.items())[:8])
+                    + "\n\n" + tr("Retry the import before clearing the old store."),
+                )
+            elif copied:
+                self._wipe_source(previous, copied)
+            else:
+                # 源库说"我有这些条目"，可一条都读不出来 → 它是锁着的。
+                # 一句都不说，用户只会看到"密码全没了"。
+                leftover = self._locked_source_notice(previous)
+        elif previous and source_ids is None:
+            # 更彻底：连"有几条"都问不到（源库锁着）
+            leftover = self._locked_source_notice(previous)
+
+        self._master_prompt_declined = False
+        self._drain_pending_start()
+        self._refresh()
+        self._notice_mode = "info"
+        if leftover:
+            self._notice.show_message(leftover, "", "warning")
+            QTimer.singleShot(9000, self._notice.fade_out)
+        else:
+            self._notice.show_message(
+                trf("Now using {store}", store=backend_label(key)), "", "accent")
+            QTimer.singleShot(4000, self._notice.fade_out)
+        return True
+
+    @staticmethod
+    def _locked_source_notice(previous: str) -> str:
+        return trf("The old store ({store}) is locked, so nothing was moved. "
+                   "Unlock it and switch again to bring the passwords over.",
+                   store=backend_label(previous))
+
+    def _rollback_backend(self, previous: str, previous_pref: str) -> None:
+        """向导中途取消：**实际后端与偏好都退回原样**。
+
+        只退实际后端不够 —— 偏好可能本来是 auto，那样下次启动会照着被写坏的
+        偏好走（比如跑到用户根本没选的库上）。
+        """
+        if previous:
+            self._secrets.select(previous)          # 先切回实际在用的那个
+        self._secrets.select(previous_pref or "auto")   # 再把偏好也还原
+
+    def _pick_merge(self, source: str, target: str, ids: list[str]) -> list[str] | None:
+        """算一遍合并计划；有冲突就让用户定谁赢。返回要写进目标的 id（None = 取消）。
+
+        计划是**只读**算出来的，所以可以放心地在弹窗之前先算好。
+        """
+        plan = self._secrets.plan_merge_between(source, target, ids)
+        if plan.unreadable:
+            QMessageBox.information(
+                self, tr("Merge"),
+                trf("{count} entries could not be read; they will be left as they are.",
+                    count=len(plan.unreadable)))
+        prefer_source = True
+        if plan.conflicts:
+            names = {screen.id: screen.name for screen in self._store.sorted_screens()}
+            listed = ", ".join(names.get(sid, sid) for sid in plan.conflicts[:8])
+            prefer_source = choose_merge_rule(
+                self, adding=len(plan.add), identical=len(plan.same),
+                conflicts=len(plan.conflicts), names=listed)
+            if prefer_source is None:
+                return None
+        return plan.ids_to_copy(prefer_source)
+
+    def _migrate_passwords(self, source: str, target: str, ids):
+        """后台逐条搬密码，带进度框（可取消）。返回 (成功的 id, {失败的 id: 原因})。"""
+        box = QProgressDialog(tr("Moving saved passwords…"), tr("Cancel"), 0, len(ids), self)
+        box.setWindowTitle(tr("Password store"))
+        box.setWindowModality(Qt.WindowModality.WindowModal)
+        box.setMinimumDuration(0)
+
+        result: dict = {}
+
+        def progress(done: int, total: int) -> None:
+            if box.wasCanceled():
+                raise _MigrationCancelled()
+
+        def worker() -> None:
+            try:
+                result["value"] = self._secrets.migrate_between(source, target, ids,
+                                                                progress)
+            except _MigrationCancelled:
+                result["value"] = ([], {})
+            except Exception as exc:  # noqa: BLE001
+                result["value"] = ([], {sid: f"{type(exc).__name__}: {exc}" for sid in ids})
+
+        thread = threading.Thread(target=worker, daemon=True, name="secrets-migrate")
+        thread.start()
+        while thread.is_alive():
+            QApplication.processEvents()
+            thread.join(0.05)
+        box.close()
+        return result.get("value", ([], {}))
 
     def _krfb_version_source(self) -> str:
         """返回**源字符串**：真实版号不是词条会原样透传，`not installed` /
@@ -854,6 +1318,9 @@ class MainWindow(QMainWindow):
         self._notice.fade_out()
         if self._notice_mode == "env":
             self._on_settings()
+            return
+        if self._notice_mode == "secrets":
+            self._request_unlock(automatic=False)
             return
         targets = list(self._crashed_now)
         self._crashed_now = []

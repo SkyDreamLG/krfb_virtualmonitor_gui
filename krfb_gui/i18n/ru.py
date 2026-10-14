@@ -53,11 +53,6 @@ CATALOG: dict[str, str] = {
         "Кошелёк KDE закрыт; пароли хранятся в памяти только до конца сеанса",
     "kwalletd is not running on the session bus":
         "В сеансовой шине не запущен kwalletd",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "Подсистема кошелька KDE отключена или кошелёк отсутствует",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "Кошелёк не ответил вовремя; пароли хранятся в памяти только до конца сеанса",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -335,7 +330,6 @@ CATALOG: dict[str, str] = {
     "Launch at login": "Автозапуск при входе",
     "Start at login (tray mode)": "Запускать при входе (режим лотка)",
     "Password storage": "Хранение паролей",
-    "Unlock keyring": "Разблокировать связку ключей",
     "Environment": "Окружение",
     "About": "О программе",
     "No problems found": "Проблем не обнаружено",
@@ -361,4 +355,158 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines} строк   ·   {size} байт",
     "No match for \"{needle}\"": "Совпадений для «{needle}» не найдено",
     "Refreshes every {seconds} s": "Обновляется каждые {seconds} с",
+
+    # --- 密码库（多后端）----------------------------------------------------
+    "KDE Wallet": "KDE Wallet",
+    "System keyring (Secret Service)": "Системная связка ключей (Secret Service)",
+    "Built-in encrypted vault": "Встроенное зашифрованное хранилище",
+    "Master password required": "Требуется главный пароль",
+    "No password vault yet": "Хранилища пока нет",
+    "Enter the master password to unlock the built-in vault":
+        "Введите главный пароль, чтобы разблокировать встроенное хранилище",
+    "Set a master password to create the built-in vault":
+        "Задайте главный пароль, чтобы создать встроенное хранилище",
+    "The store is disabled or does not exist":
+        "Хранилище паролей отключено или не существует",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "Хранилище паролей не ответило вовремя; пароли хранятся в памяти "
+        "только до конца сеанса",
+    "already holds saved passwords": "уже содержит сохранённые пароли",
+    "locked; may hold saved passwords":
+        "заблокировано; может содержать сохранённые пароли",
+    "available": "доступно",
+    "always available": "всегда доступно",
+    "selected in settings": "выбрано в настройках",
+    "write failed": "ошибка записи",
+    "read-back mismatch": "несовпадение при обратном чтении",
+    "store is locked": "хранилище паролей заблокировано",
+    "store is busy": "хранилище паролей занято",
+    "could not unlock the newly created vault":
+        "не удалось разблокировать только что созданное хранилище",
+    "there is no vault": "хранилища нет",
+    "wrong master password": "неверный главный пароль",
+    "a vault already exists": "хранилище уже существует",
+    "some entries could not be decrypted; nothing was changed":
+        "некоторые записи не удалось расшифровать; ничего не изменено",
+    "(currently unavailable)": "(сейчас недоступно)",
+    "Store:": "Хранилище:",
+    "Detect again": "Определить заново",
+    "Using {backend}: the selected store is unavailable":
+        "Используется {backend}: выбранное хранилище паролей недоступно",
+    "Master password": "Главный пароль",
+    "Current master password": "Текущий главный пароль",
+    "New master password": "Новый главный пароль",
+    "Repeat the password": "Повторите пароль",
+    "Create": "Создать",
+    "Change": "Сменить",
+    "Unlock": "Разблокировать",
+    "Unlocked": "Разблокировано",
+    "Enter master password": "Введите главный пароль",
+    "Set master password": "Задать главный пароль",
+    "Change master password": "Сменить главный пароль",
+    "Create the built-in vault": "Создать встроенное хранилище",
+    "Unlock the built-in vault": "Разблокировать встроенное хранилище",
+    "Change the master password": "Сменить главный пароль",
+    "Use at least {count} characters": "Используйте не менее {count} символов",
+    "The two passwords do not match": "Пароли не совпадают",
+    "Enter the current master password": "Введите текущий главный пароль",
+    "The built-in vault stores passwords encrypted. There is no way "
+    "to recover them if you forget the master password.":
+        "Встроенное хранилище хранит пароли в зашифрованном виде. Если вы "
+        "забудете главный пароль, восстановить их не получится.",
+    "Enter the master password for the built-in vault.":
+        "Введите главный пароль для встроенного хранилища.",
+    "Changing the master password re-encrypts every password in the vault.":
+        "Смена главного пароля заново шифрует все пароли в хранилище.",
+    "Wrong master password": "Неверный главный пароль",
+    "Could not create the vault": "Не удалось создать хранилище",
+    "The master password has been changed.": "Главный пароль изменён.",
+    "Enter the master password to read saved passwords":
+        "Введите главный пароль, чтобы прочитать сохранённые пароли",
+
+    # --- 高危确认（验证码）--------------------------------------------------
+    "Type the result here": "Введите результат здесь",
+    "Confirm": "Подтвердить",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one": "Неверный ответ, вот другой пример",
+    "Too many wrong answers": "Слишком много неверных ответов",
+
+    # --- 密码库告警与切换 ---------------------------------------------------
+    "Password store": "Хранилище паролей",
+    "Password store unavailable": "Хранилище паролей недоступно",
+    "{store} holds {count} saved passwords but is unavailable right now.":
+        "В «{store}» сохранено паролей: {count}, но сейчас оно недоступно.",
+    "Enable it again in your system settings, or switch to another store — "
+    "switching does not copy the old passwords over, and clearing the old "
+    "store afterwards cannot be undone.":
+        "Включите его снова в системных настройках или перейдите на другое "
+        "хранилище паролей — при переходе старые пароли не переносятся, а "
+        "последующая очистка старого хранилища необратима.",
+    "Open settings": "Открыть настройки",
+    "{store} is not available right now.": "«{store}» сейчас недоступно.",
+    "The target store could not be unlocked.":
+        "Не удалось разблокировать целевое хранилище.",
+    "last updated {time}": "последнее обновление: {time}",
+    "that store does not report timestamps":
+        "это хранилище не сообщает метки времени",
+    "Moving saved passwords…": "Перенос сохранённых паролей…",
+    "{count} passwords could not be moved:":
+        "Не удалось перенести паролей: {count}",
+    "Retry the import before clearing the old store.":
+        "Повторите импорт, прежде чем очищать старое хранилище.",
+    "Now using {store}": "Теперь используется «{store}»",
+    "Clear the old password store": "Очистить старое хранилище паролей",
+    "Delete the {count} passwords from {store}?":
+        "Удалить пароли из «{store}» (всего: {count})?",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "Теперь они хранятся в новом хранилище. Удаление здесь необратимо — "
+        "и другие приложения, использующие это хранилище, тоже больше их не "
+        "найдут.",
+    "Delete them": "Удалить их",
+    "Deleted {count} passwords from the old store":
+        "Из старого хранилища удалено паролей: {count}",
+
+    # --- 内置库重置 ---------------------------------------------------------
+    "Reset the built-in vault": "Сбросить встроенное хранилище",
+    "This deletes every password stored in the built-in vault.":
+        "Это удалит все пароли, хранящиеся во встроенном хранилище.",
+    "They cannot be recovered — not even with the master password. "
+    "Only do this if you no longer need them.":
+        "Их нельзя будет восстановить — даже с главным паролем. Делайте "
+        "это, только если они больше не нужны.",
+    "Delete the vault": "Удалить хранилище",
+    "The built-in vault has been reset": "Встроенное хранилище сброшено",
+
+    # --- Данные в целевом хранилище: оставить / перезаписать / объединить ---
+    "{store} already holds {count} of this app's passwords ({when}).":
+        "В «{store}» уже сохранено паролей этого приложения: {count} "
+        "({when}).",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.":
+        "В «{source}» для тех же экранов сохранено паролей: {moving}. "
+        "Отброшенная сторона удаляется безвозвратно.",
+    "Keep the target's passwords": "Оставить пароли из целевого хранилища",
+    "Overwrite with the new passwords": "Перезаписать новыми паролями",
+    "Merge…": "Объединить…",
+    "Merge": "Объединить",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.":
+        "Будет добавлено: {adding}, пропущено как идентичные: "
+        "{identical}, конфликтов: {conflicts}.",
+    "Screens in conflict: {names}": "Конфликтующие экраны: {names}",
+    "Keep the target's version": "Оставить версию из целевого хранилища",
+    "Use the new version": "Использовать новую версию",
+    "{count} entries could not be read; they will be left as they are.":
+        "Не удалось прочитать записей: {count}; "
+        "они останутся без изменений.",
+
+    # --- Старое хранилище заблокировано: ничего не перенесено ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "Старое хранилище ({store}) заблокировано, поэтому ничего не "
+        "перенесено. Разблокируйте его и повторите переключение, чтобы "
+        "перенести пароли.",
 }

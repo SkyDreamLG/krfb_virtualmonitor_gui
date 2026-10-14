@@ -51,11 +51,6 @@ CATALOG: dict[str, str] = {
         "KDE 钱包未解锁，密码暂存本次会话内存",
     "kwalletd is not running on the session bus":
         "会话总线上没有 kwalletd",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "KDE 钱包子系统已关闭，或没有可用的钱包",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "钱包无响应，密码暂存本次会话内存",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -312,7 +307,6 @@ CATALOG: dict[str, str] = {
     "Launch at login": "开机自启",
     "Start at login (tray mode)": "登录时自动启动（托盘模式）",
     "Password storage": "密码存储",
-    "Unlock keyring": "解锁密钥环",
     "Environment": "环境检查",
     "About": "关于",
     "No problems found": "未发现问题",
@@ -337,4 +331,138 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines} 行   ·   {size} 字节",
     "No match for \"{needle}\"": "未找到「{needle}」",
     "Refreshes every {seconds} s": "每 {seconds} 秒刷新一次",
+
+    # --- 密码库（多后端）----------------------------------------------------
+    "KDE Wallet": "KDE 钱包",
+    "System keyring (Secret Service)": "系统密钥环（Secret Service）",
+    "Built-in encrypted vault": "内置加密库",
+    "Master password required": "需要主密码",
+    "No password vault yet": "还没有密码库",
+    "Enter the master password to unlock the built-in vault":
+        "输入主密码以解锁内置加密库",
+    "Set a master password to create the built-in vault":
+        "设置主密码即可创建内置加密库",
+    "The store is disabled or does not exist": "该密码库已停用或不存在",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "密码库无响应，密码暂存本次会话内存",
+    "already holds saved passwords": "已有保存的密码",
+    "locked; may hold saved passwords": "已锁定，可能存有密码",
+    "available": "可用",
+    "always available": "永远可用",
+    "selected in settings": "在设置里选定的",
+    "write failed": "写入失败",
+    "read-back mismatch": "读回校验不一致",
+    "store is locked": "密码库已锁定",
+    "store is busy": "密码库忙（上一次调用还没返回）",
+    "could not unlock the newly created vault": "新建的密码库无法解锁",
+    "there is no vault": "还没有密码库",
+    "wrong master password": "主密码不正确",
+    "a vault already exists": "密码库已存在",
+    "some entries could not be decrypted; nothing was changed":
+        "有条目无法解密，未做任何改动",
+    "(currently unavailable)": "（当前不可用）",
+    "Store:": "密码库：",
+    "Detect again": "立即重新检测",
+    "Using {backend}: the selected store is unavailable":
+        "正在使用 {backend}：选定的密码库不可用",
+    "Master password": "主密码",
+    "Current master password": "当前主密码",
+    "New master password": "新主密码",
+    "Repeat the password": "再输一次",
+    "Create": "创建",
+    "Change": "修改",
+    "Unlock": "解锁",
+    "Unlocked": "已解锁",
+    "Enter master password": "输入主密码",
+    "Set master password": "设置主密码",
+    "Change master password": "修改主密码",
+    "Create the built-in vault": "创建内置加密库",
+    "Unlock the built-in vault": "解锁内置加密库",
+    "Change the master password": "修改主密码",
+    "Use at least {count} characters": "至少 {count} 个字符",
+    "The two passwords do not match": "两次输入不一致",
+    "Enter the current master password": "请输入当前主密码",
+    "The built-in vault stores passwords encrypted. There is no way "
+    "to recover them if you forget the master password.":
+        "内置加密库把密码加密保存。忘记主密码就没有任何办法找回它们。",
+    "Enter the master password for the built-in vault.":
+        "输入内置加密库的主密码。",
+    "Changing the master password re-encrypts every password in the vault.":
+        "修改主密码会重新加密库里的每一条密码。",
+    "Wrong master password": "主密码不正确",
+    "Could not create the vault": "无法创建密码库",
+    "The master password has been changed.": "主密码已修改。",
+    "Enter the master password to read saved passwords":
+        "输入主密码才能读取已保存的密码",
+
+    # --- 高危确认（验证码）--------------------------------------------------
+    "Type the result here": "在这里输入结果",
+    "Confirm": "确认",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one": "答案不对，换一道题",
+    "Too many wrong answers": "连续答错，已取消",
+
+    # --- 密码库告警与切换 ---------------------------------------------------
+    "Password store": "密码库",
+    "Password store unavailable": "密码库不可用",
+    "{store} holds {count} saved passwords but is unavailable right now.":
+        "「{store}」里存着 {count} 条密码，但现在不可用。",
+    "Enable it again in your system settings, or switch to another store — "
+    "switching does not copy the old passwords over, and clearing the old "
+    "store afterwards cannot be undone.":
+        "请在系统设置里重新启用它，或者换一个密码库 —— 换库不会把这些密码带过去，"
+        "之后若选择清除原数据则无法恢复。",
+    "Open settings": "打开设置",
+    "{store} is not available right now.": "「{store}」当前不可用。",
+    "The target store could not be unlocked.": "目标密码库无法解锁。",
+    "last updated {time}": "最近更新于 {time}",
+    "that store does not report timestamps": "该密码库不提供时间戳",
+    "Moving saved passwords…": "正在迁移已保存的密码…",
+    "{count} passwords could not be moved:":
+        "有 {count} 条密码没能迁移：",
+    "Retry the import before clearing the old store.":
+        "请先重试导入，再清除原密码库。",
+    "Now using {store}": "已切换到「{store}」",
+    "Clear the old password store": "清除原密码库的数据",
+    "Delete the {count} passwords from {store}?":
+        "要从「{store}」里删除这 {count} 条密码吗？",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "它们现在已经在新密码库里了。在这里删除无法恢复 —— 而且其他使用该密码库的"
+        "程序也会找不到它们。",
+    "Delete them": "删除它们",
+    "Deleted {count} passwords from the old store":
+        "已从原密码库删除 {count} 条密码",
+
+    # --- 内置库重置 ---------------------------------------------------------
+    "Reset the built-in vault": "重置内置加密库",
+    "This deletes every password stored in the built-in vault.":
+        "这会删除内置加密库里保存的所有密码。",
+    "They cannot be recovered — not even with the master password. "
+    "Only do this if you no longer need them.":
+        "它们无法恢复 —— 有主密码也救不回来。只有确定不再需要时才这么做。",
+    "Delete the vault": "删除密码库",
+    "The built-in vault has been reset": "内置加密库已重置",
+
+    # --- 换库时目标已有数据：保留 / 覆盖 / 合并 ---
+    "{store} already holds {count} of this app's passwords ({when}).": "「{store}」里已经有本程序的 {count} 条密码（{when}）。",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.": "「{source}」里有同一批虚拟屏的 {moving} 条。被放弃的那一边会被永久删除。",
+    "Keep the target's passwords": "保留目标里的密码",
+    "Overwrite with the new passwords": "用新密码覆盖",
+    "Merge…": "合并…",
+    "Merge": "合并",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.": "将新增 {adding} 条、{identical} 条完全相同会跳过、{conflicts} 条有冲突。",
+    "Screens in conflict: {names}": "冲突的虚拟屏：{names}",
+    "Keep the target's version": "冲突时保留目标里的",
+    "Use the new version": "冲突时用新的",
+    "{count} entries could not be read; they will be left as they are.": "有 {count} 条读不出来，将保持原样。",
+
+    # --- 换库时源库锁着：一条都没搬，要说清楚 ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "原密码库「{store}」锁着，一条都没能搬过来。解锁它之后重新切换一次即可带走密码。",
 }

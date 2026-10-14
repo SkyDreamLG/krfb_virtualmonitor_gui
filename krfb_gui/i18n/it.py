@@ -52,11 +52,6 @@ CATALOG: dict[str, str] = {
         "Il portafoglio KDE è chiuso; le password restano in memoria solo per questa sessione",
     "kwalletd is not running on the session bus":
         "kwalletd non è in esecuzione sul bus della sessione",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "Il sottosistema del portafoglio KDE è disattivato o non esiste alcun portafoglio",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "Il portafoglio non ha risposto in tempo; le password restano in memoria solo per questa sessione",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -330,7 +325,6 @@ CATALOG: dict[str, str] = {
     "Launch at login": "Avvio automatico",
     "Start at login (tray mode)": "Avvia all'accesso (modalità vassoio)",
     "Password storage": "Archiviazione delle password",
-    "Unlock keyring": "Sblocca portachiavi",
     "Environment": "Ambiente",
     "About": "Informazioni",
     "No problems found": "Nessun problema rilevato",
@@ -356,4 +350,164 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines} righe   ·   {size} byte",
     "No match for \"{needle}\"": "Nessuna corrispondenza per «{needle}»",
     "Refreshes every {seconds} s": "Aggiornamento ogni {seconds} s",
+
+    # --- 密码库（多后端）----------------------------------------------------
+    "KDE Wallet": "KDE Wallet",
+    "System keyring (Secret Service)": "Portachiavi di sistema (Secret Service)",
+    "Built-in encrypted vault": "Cassaforte cifrata integrata",
+    "Master password required": "Password principale richiesta",
+    "No password vault yet": "Ancora nessuna cassaforte",
+    "Enter the master password to unlock the built-in vault":
+        "Inserisci la password principale per sbloccare la cassaforte integrata",
+    "Set a master password to create the built-in vault":
+        "Imposta una password principale per creare la cassaforte integrata",
+    "The store is disabled or does not exist": "L'archivio è disattivato o non esiste",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "L'archivio non ha risposto in tempo; le password restano in memoria "
+        "solo per questa sessione",
+    "already holds saved passwords": "contiene già password salvate",
+    "locked; may hold saved passwords": "bloccato; potrebbe contenere password salvate",
+    "available": "disponibile",
+    "always available": "sempre disponibile",
+    "selected in settings": "selezionato nelle impostazioni",
+    "write failed": "scrittura non riuscita",
+    "read-back mismatch": "rilettura non corrispondente",
+    "store is locked": "l'archivio è bloccato",
+    "store is busy": "l'archivio è occupato",
+    "could not unlock the newly created vault":
+        "impossibile sbloccare la cassaforte appena creata",
+    "there is no vault": "non esiste alcuna cassaforte",
+    "wrong master password": "password principale errata",
+    "a vault already exists": "esiste già una cassaforte",
+    "some entries could not be decrypted; nothing was changed":
+        "alcune voci non sono state decifrate; nulla è stato modificato",
+    "(currently unavailable)": "(attualmente non disponibile)",
+    "Store:": "Archivio:",
+    "Detect again": "Rileva di nuovo",
+    "Using {backend}: the selected store is unavailable":
+        "In uso: {backend}; l'archivio selezionato non è disponibile",
+    "Master password": "Password principale",
+    "Current master password": "Password principale attuale",
+    "New master password": "Nuova password principale",
+    "Repeat the password": "Ripeti la password",
+    "Create": "Crea",
+    "Change": "Cambia",
+    "Unlock": "Sblocca",
+    "Unlocked": "Sbloccato",
+    "Enter master password": "Inserisci la password principale",
+    "Set master password": "Imposta la password principale",
+    "Change master password": "Cambia la password principale",
+    "Create the built-in vault": "Crea la cassaforte integrata",
+    "Unlock the built-in vault": "Sblocca la cassaforte integrata",
+    "Change the master password": "Cambia la password principale",
+    "Use at least {count} characters": "Usa almeno {count} caratteri",
+    "The two passwords do not match": "Le due password non coincidono",
+    "Enter the current master password": "Inserisci la password principale attuale",
+    "The built-in vault stores passwords encrypted. There is no way "
+    "to recover them if you forget the master password.":
+        "La cassaforte integrata archivia le password in forma cifrata. Se "
+        "dimentichi la password principale non c'è alcun modo di recuperarle.",
+    "Enter the master password for the built-in vault.":
+        "Inserisci la password principale della cassaforte integrata.",
+    "Changing the master password re-encrypts every password in the vault.":
+        "Cambiare la password principale cifra di nuovo ogni password della "
+        "cassaforte.",
+    "Wrong master password": "Password principale errata",
+    "Could not create the vault": "Impossibile creare la cassaforte",
+    "The master password has been changed.": "La password principale è stata cambiata.",
+    "Enter the master password to read saved passwords":
+        "Inserisci la password principale per leggere le password salvate",
+
+    # --- 高危确认（验证码）--------------------------------------------------
+    "Type the result here": "Scrivi qui il risultato",
+    "Confirm": "Conferma",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one": "Risposta sbagliata, eccone un'altra",
+    "Too many wrong answers": "Troppe risposte sbagliate",
+
+    # --- 密码库告警与切换 ---------------------------------------------------
+    "Password store": "Archivio delle password",
+    "Password store unavailable": "Archivio delle password non disponibile",
+    "{store} holds {count} saved passwords but is unavailable right now.":
+        "«{store}» contiene {count} password salvate ma al momento non è "
+        "disponibile.",
+    "Enable it again in your system settings, or switch to another store — "
+    "switching does not copy the old passwords over, and clearing the old "
+    "store afterwards cannot be undone.":
+        "Riattivalo nelle impostazioni di sistema, oppure passa a un altro "
+        "archivio: il passaggio non copia le vecchie password e, se poi scegli "
+        "di cancellare i dati del vecchio archivio, l'operazione non può "
+        "essere annullata.",
+    "Open settings": "Apri le impostazioni",
+    "{store} is not available right now.":
+        "«{store}» al momento non è disponibile.",
+    "The target store could not be unlocked.":
+        "Non è stato possibile sbloccare l'archivio di destinazione.",
+    "last updated {time}": "ultimo aggiornamento: {time}",
+    "that store does not report timestamps":
+        "questo archivio non fornisce timestamp",
+    "Moving saved passwords…": "Migrazione delle password salvate…",
+    "{count} passwords could not be moved:":
+        "Non è stato possibile spostare {count} password:",
+    "Retry the import before clearing the old store.":
+        "Riprova l'importazione prima di cancellare i dati del vecchio archivio.",
+    "Now using {store}": "Ora in uso: «{store}»",
+    "Clear the old password store":
+        "Cancella i dati del vecchio archivio delle password",
+    "Delete the {count} passwords from {store}?":
+        "Eliminare le {count} password da «{store}»?",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "Ora sono nel nuovo archivio. Eliminarle qui non può essere annullato "
+        "— e nessun'altra applicazione che usa quell'archivio potrà più "
+        "trovarle.",
+    "Delete them": "Eliminale",
+    "Deleted {count} passwords from the old store":
+        "Eliminate {count} password dal vecchio archivio",
+
+    # --- 内置库重置 ---------------------------------------------------------
+    "Reset the built-in vault": "Reimposta la cassaforte integrata",
+    "This deletes every password stored in the built-in vault.":
+        "Questa operazione elimina tutte le password archiviate nella "
+        "cassaforte integrata.",
+    "They cannot be recovered — not even with the master password. "
+    "Only do this if you no longer need them.":
+        "Non sarà possibile recuperarle, nemmeno con la password principale. "
+        "Fallo solo se non ti servono più.",
+    "Delete the vault": "Elimina la cassaforte",
+    "The built-in vault has been reset": "La cassaforte integrata è stata reimpostata",
+
+    # --- Dati già presenti nell'archivio: mantieni / sovrascrivi / unisci ---
+    "{store} already holds {count} of this app's passwords ({when}).":
+        "«{store}» contiene già {count} password di questa applicazione "
+        "({when}).",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.":
+        "«{source}» contiene {moving} password per gli stessi schermi. "
+        "Il lato che scarti viene eliminato definitivamente.",
+    "Keep the target's passwords":
+        "Mantieni le password dell'archivio di destinazione",
+    "Overwrite with the new passwords": "Sovrascrivi con le nuove password",
+    "Merge…": "Unisci…",
+    "Merge": "Unisci",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.":
+        "{adding} verranno aggiunte, {identical} sono identiche e "
+        "verranno saltate, {conflicts} sono in conflitto.",
+    "Screens in conflict: {names}": "Schermi in conflitto: {names}",
+    "Keep the target's version":
+        "Mantieni la versione dell'archivio di destinazione",
+    "Use the new version": "Usa la nuova versione",
+    "{count} entries could not be read; they will be left as they are.":
+        "Non è stato possibile leggere {count} voci; "
+        "rimarranno invariate.",
+
+    # --- Vecchio archivio bloccato: nulla è stato spostato ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "Il vecchio archivio ({store}) è bloccato, quindi non è stato "
+        "spostato nulla. Sbloccalo e ripeti il passaggio per trasferire "
+        "le password.",
 }

@@ -47,11 +47,6 @@ CATALOG: dict[str, str] = {
         "Die KDE-Brieftasche ist geschlossen; Passwörter werden nur für diese Sitzung im Arbeitsspeicher gehalten",
     "kwalletd is not running on the session bus":
         "Auf dem Sitzungsbus läuft kein kwalletd",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "Das KDE-Brieftaschen-Subsystem ist deaktiviert oder es existiert keine Brieftasche",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "Die Brieftasche hat nicht rechtzeitig geantwortet; Passwörter werden nur für diese Sitzung im Arbeitsspeicher gehalten",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -352,7 +347,6 @@ CATALOG: dict[str, str] = {
     "Start at login (tray mode)":
         "Beim Anmelden starten (Systemabschnitt-Modus)",
     "Password storage": "Passwortspeicherung",
-    "Unlock keyring": "Schlüsselbund entsperren",
     "Environment": "Umgebung",
     "About": "Über",
     "No problems found": "Keine Probleme gefunden",
@@ -379,4 +373,174 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines} Zeilen   ·   {size} Byte",
     "No match for \"{needle}\"": "Kein Treffer für „{needle}“",
     "Refreshes every {seconds} s": "Aktualisierung alle {seconds} s",
+
+    # --- 密码库（多后端）----------------------------------------------------
+    "KDE Wallet": "KDE Wallet",
+    "System keyring (Secret Service)": "System-Schlüsselbund (Secret Service)",
+    "Built-in encrypted vault": "Eingebauter verschlüsselter Tresor",
+    "Master password required": "Master-Passwort erforderlich",
+    "No password vault yet": "Noch kein Tresor vorhanden",
+    "Enter the master password to unlock the built-in vault":
+        "Master-Passwort eingeben, um den eingebauten Tresor zu entsperren",
+    "Set a master password to create the built-in vault":
+        "Master-Passwort festlegen, um den eingebauten Tresor zu erstellen",
+    "The store is disabled or does not exist":
+        "Der Passwortspeicher ist deaktiviert oder existiert nicht",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "Der Passwortspeicher hat nicht rechtzeitig geantwortet; Passwörter "
+        "werden nur für diese Sitzung im Arbeitsspeicher gehalten",
+    "already holds saved passwords": "enthält bereits gespeicherte Passwörter",
+    "locked; may hold saved passwords":
+        "gesperrt; enthält möglicherweise gespeicherte Passwörter",
+    "available": "verfügbar",
+    "always available": "immer verfügbar",
+    "selected in settings": "in den Einstellungen ausgewählt",
+    "write failed": "Schreiben fehlgeschlagen",
+    "read-back mismatch": "Abweichung bei der Rückleseprüfung",
+    "store is locked": "Der Passwortspeicher ist gesperrt",
+    "store is busy":
+        "Der Passwortspeicher ist beschäftigt (der vorherige Aufruf ist noch "
+        "nicht zurückgekehrt)",
+    "could not unlock the newly created vault":
+        "Der neu erstellte Tresor konnte nicht entsperrt werden",
+    "there is no vault": "Es gibt noch keinen Tresor",
+    "wrong master password": "Falsches Master-Passwort",
+    "a vault already exists": "Es existiert bereits ein Tresor",
+    "some entries could not be decrypted; nothing was changed":
+        "Einige Einträge konnten nicht entschlüsselt werden; es wurde nichts "
+        "geändert",
+    "(currently unavailable)": "(derzeit nicht verfügbar)",
+    "Store:": "Speicher:",
+    "Detect again": "Erneut prüfen",
+    "Using {backend}: the selected store is unavailable":
+        "Verwendet {backend}: der ausgewählte Passwortspeicher ist nicht "
+        "verfügbar",
+    "Master password": "Master-Passwort",
+    "Current master password": "Aktuelles Master-Passwort",
+    "New master password": "Neues Master-Passwort",
+    "Repeat the password": "Passwort wiederholen",
+    "Create": "Erstellen",
+    "Change": "Ändern",
+    "Unlock": "Entsperren",
+    "Unlocked": "Entsperrt",
+    "Enter master password": "Master-Passwort eingeben",
+    "Set master password": "Master-Passwort festlegen",
+    "Change master password": "Master-Passwort ändern",
+    "Create the built-in vault": "Eingebauten Tresor erstellen",
+    "Unlock the built-in vault": "Eingebauten Tresor entsperren",
+    "Change the master password": "Master-Passwort ändern",
+    "Use at least {count} characters": "Mindestens {count} Zeichen verwenden",
+    "The two passwords do not match":
+        "Die beiden Passwörter stimmen nicht überein",
+    "Enter the current master password": "Aktuelles Master-Passwort eingeben",
+    "The built-in vault stores passwords encrypted. There is no way to "
+    "recover them if you forget the master password.":
+        "Der eingebaute Tresor speichert Passwörter verschlüsselt. Wenn das "
+        "Master-Passwort vergessen wird, gibt es keine Möglichkeit, sie "
+        "wiederherzustellen.",
+    "Enter the master password for the built-in vault.":
+        "Master-Passwort für den eingebauten Tresor eingeben.",
+    "Changing the master password re-encrypts every password in the "
+    "vault.":
+        "Beim Ändern des Master-Passworts wird jedes Passwort im Tresor neu "
+        "verschlüsselt.",
+    "Wrong master password": "Falsches Master-Passwort",
+    "Could not create the vault": "Der Tresor konnte nicht erstellt werden",
+    "The master password has been changed.":
+        "Das Master-Passwort wurde geändert.",
+    "Enter the master password to read saved passwords":
+        "Master-Passwort eingeben, um gespeicherte Passwörter zu lesen",
+
+    # --- 高危确认（验证码）--------------------------------------------------
+    "Type the result here": "Ergebnis hier eingeben",
+    "Confirm": "Bestätigen",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one":
+        "Falsche Antwort, hier ist eine andere",
+    "Too many wrong answers": "Zu viele falsche Antworten",
+
+    # --- 密码库告警与切换----------------------------------------------------
+    "Password store": "Passwortspeicher",
+    "Password store unavailable": "Passwortspeicher nicht verfügbar",
+    "{store} holds {count} saved passwords but is unavailable right "
+    "now.":
+        "„{store}“ enthält {count} gespeicherte Passwörter, ist aber derzeit "
+        "nicht verfügbar.",
+    "Enable it again in your system settings, or switch to another "
+    "store — switching does not copy the old passwords over, and "
+    "clearing the old store afterwards cannot be undone.":
+        "In den Systemeinstellungen wieder aktivieren oder zu einem anderen "
+        "Passwortspeicher wechseln — beim Wechsel werden die alten Passwörter "
+        "nicht übernommen, und das spätere Leeren des alten Speichers kann "
+        "nicht rückgängig gemacht werden.",
+    "Open settings": "Einstellungen öffnen",
+    "{store} is not available right now.":
+        "„{store}“ ist derzeit nicht verfügbar.",
+    "The target store could not be unlocked.":
+        "Der Ziel-Passwortspeicher konnte nicht entsperrt werden.",
+    "last updated {time}": "zuletzt aktualisiert {time}",
+    "that store does not report timestamps":
+        "dieser Passwortspeicher liefert keine Zeitstempel",
+    "Moving saved passwords…": "Gespeicherte Passwörter werden verschoben…",
+    "{count} passwords could not be moved:":
+        "{count} Passwörter konnten nicht verschoben werden:",
+    "Retry the import before clearing the old store.":
+        "Vor dem Leeren des alten Speichers den Import erneut versuchen.",
+    "Now using {store}": "Verwendet jetzt {store}",
+    "Clear the old password store": "Alten Passwortspeicher leeren",
+    "Delete the {count} passwords from {store}?":
+        "Die {count} Passwörter aus „{store}“ löschen?",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "Sie sind jetzt im neuen Speicher abgelegt. Das Löschen hier kann nicht "
+        "rückgängig gemacht werden — und auch andere Anwendungen, die diesen "
+        "Speicher nutzen, finden sie dann nicht mehr.",
+    "Delete them": "Löschen",
+    "Deleted {count} passwords from the old store":
+        "{count} Passwörter aus dem alten Speicher gelöscht",
+
+    # --- 内置库重置----------------------------------------------------------
+    "Reset the built-in vault": "Eingebauten Tresor zurücksetzen",
+    "This deletes every password stored in the built-in vault.":
+        "Dies löscht jedes im eingebauten Tresor gespeicherte Passwort.",
+    "They cannot be recovered — not even with the master password. Only "
+    "do this if you no longer need them.":
+        "Sie können nicht wiederhergestellt werden — auch nicht mit dem "
+        "Master-Passwort. Nur fortfahren, wenn sie nicht mehr benötigt werden.",
+    "Delete the vault": "Tresor löschen",
+    "The built-in vault has been reset":
+        "Der eingebaute Tresor wurde zurückgesetzt",
+
+    # --- 换库时目标已有数据：保留 / 覆盖 / 合并-----------------------------------------
+    "{store} already holds {count} of this app's passwords ({when}).":
+        "„{store}“ enthält bereits {count} Passwörter dieser Anwendung "
+        "({when}).",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.":
+        "„{source}“ enthält {moving} für dieselben Bildschirme. Welche Seite "
+        "Sie auch verwerfen — sie wird endgültig gelöscht.",
+    "Keep the target's passwords": "Passwörter des Ziels behalten",
+    "Overwrite with the new passwords":
+        "Mit den neuen Passwörtern überschreiben",
+    "Merge…": "Zusammenführen…",
+    "Merge": "Zusammenführen",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.":
+        "{adding} werden hinzugefügt, {identical} sind identisch und werden "
+        "übersprungen, {conflicts} stehen im Konflikt.",
+    "Screens in conflict: {names}": "Bildschirme im Konflikt: {names}",
+    "Keep the target's version": "Version des Ziels behalten",
+    "Use the new version": "Neue Version verwenden",
+    "{count} entries could not be read; they will be left as they are.":
+        "{count} Einträge konnten nicht gelesen werden; sie bleiben "
+        "unverändert.",
+
+    # --- 换库时源库锁着：一条都没搬，要说清楚 ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "Der alte Speicher ({store}) ist gesperrt, es wurde nichts "
+        "verschoben. Entsperren Sie ihn und wechseln Sie erneut, dann "
+        "werden die Passwörter übernommen.",
 }

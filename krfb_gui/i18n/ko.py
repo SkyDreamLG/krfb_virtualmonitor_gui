@@ -47,11 +47,6 @@ CATALOG: dict[str, str] = {
         "KDE 지갑이 닫혀 있습니다. 비밀번호는 이번 세션 동안에만 메모리에 보관됩니다",
     "kwalletd is not running on the session bus":
         "세션 버스에 kwalletd가 없습니다",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "KDE 지갑 기능이 꺼져 있거나 지갑이 없습니다",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "지갑이 제때 응답하지 않았습니다. 비밀번호는 이번 세션 동안에만 메모리에 보관됩니다",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -337,7 +332,6 @@ CATALOG: dict[str, str] = {
     "Launch at login": "로그인 시 실행",
     "Start at login (tray mode)": "로그인 시 시작 (트레이 모드)",
     "Password storage": "비밀번호 저장",
-    "Unlock keyring": "키링 잠금 해제",
     "Environment": "환경",
     "About": "정보",
     "No problems found": "문제를 찾지 못했습니다",
@@ -364,4 +358,160 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines}줄   ·   {size}바이트",
     "No match for \"{needle}\"": "'{needle}'에 대한 일치 항목이 없습니다",
     "Refreshes every {seconds} s": "{seconds}초마다 새로 고침",
+
+    # --- 密码库（多后端）----------------------------------------------------
+    "KDE Wallet": "KDE 지갑",
+    "System keyring (Secret Service)": "시스템 키링 (Secret Service)",
+    "Built-in encrypted vault": "내장 암호화 금고",
+    "Master password required": "마스터 비밀번호 필요",
+    "No password vault yet": "아직 비밀번호 금고가 없습니다",
+    "Enter the master password to unlock the built-in vault":
+        "내장 암호화 금고의 잠금을 해제하려면 마스터 비밀번호를 입력하세요",
+    "Set a master password to create the built-in vault":
+        "마스터 비밀번호를 설정하면 내장 암호화 금고가 만들어집니다",
+    "The store is disabled or does not exist":
+        "저장소가 비활성화되었거나 존재하지 않습니다",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "저장소가 제때 응답하지 않았습니다. 비밀번호는 "
+        "이번 세션 동안에만 메모리에 보관됩니다",
+    "already holds saved passwords": "저장된 비밀번호 있음",
+    "locked; may hold saved passwords": "잠김, 저장된 비밀번호가 있을 수 있음",
+    "available": "사용 가능",
+    "always available": "항상 사용 가능",
+    "selected in settings": "설정에서 선택됨",
+    "write failed": "쓰기 실패",
+    "read-back mismatch": "다시 읽은 값 불일치",
+    "store is locked": "저장소가 잠겨 있습니다",
+    "store is busy": "저장소가 사용 중입니다 (이전 호출이 아직 반환되지 않음)",
+    "could not unlock the newly created vault":
+        "새로 만든 금고의 잠금을 해제할 수 없습니다",
+    "there is no vault": "금고가 없습니다",
+    "wrong master password": "마스터 비밀번호가 올바르지 않습니다",
+    "a vault already exists": "금고가 이미 존재합니다",
+    "some entries could not be decrypted; nothing was changed":
+        "일부 항목의 암호를 풀 수 없습니다. 아무것도 변경되지 않았습니다",
+    "(currently unavailable)": "(현재 사용할 수 없음)",
+    "Store:": "저장소:",
+    "Detect again": "지금 다시 감지",
+    "Using {backend}: the selected store is unavailable":
+        "{backend} 사용 중: 선택한 저장소를 사용할 수 없습니다",
+    "Master password": "마스터 비밀번호",
+    "Current master password": "현재 마스터 비밀번호",
+    "New master password": "새 마스터 비밀번호",
+    "Repeat the password": "비밀번호 다시 입력",
+    "Create": "만들기",
+    "Change": "변경",
+    "Unlock": "잠금 해제",
+    "Unlocked": "잠금 해제됨",
+    "Enter master password": "마스터 비밀번호 입력",
+    "Set master password": "마스터 비밀번호 설정",
+    "Change master password": "마스터 비밀번호 변경",
+    "Create the built-in vault": "내장 암호화 금고 만들기",
+    "Unlock the built-in vault": "내장 암호화 금고 잠금 해제",
+    "Change the master password": "마스터 비밀번호 변경",
+    "Use at least {count} characters": "{count}자 이상 사용하세요",
+    "The two passwords do not match": "두 비밀번호가 일치하지 않습니다",
+    "Enter the current master password":
+        "현재 마스터 비밀번호를 입력하세요",
+    "The built-in vault stores passwords encrypted. There is no way "
+    "to recover them if you forget the master password.":
+        "내장 암호화 금고는 비밀번호를 암호화하여 저장합니다. "
+        "마스터 비밀번호를 잊으면 되찾을 방법이 없습니다.",
+    "Enter the master password for the built-in vault.":
+        "내장 암호화 금고의 마스터 비밀번호를 입력하세요.",
+    "Changing the master password re-encrypts every password in the vault.":
+        "마스터 비밀번호를 변경하면 금고에 있는 모든 비밀번호가 "
+        "다시 암호화됩니다.",
+    "Wrong master password": "마스터 비밀번호가 올바르지 않습니다",
+    "Could not create the vault": "금고를 만들 수 없습니다",
+    "The master password has been changed.": "마스터 비밀번호를 변경했습니다.",
+    "Enter the master password to read saved passwords":
+        "저장된 비밀번호를 읽으려면 마스터 비밀번호를 입력하세요",
+
+    # --- 高危确认（验证码）--------------------------------------------------
+    "Type the result here": "여기에 결과를 입력하세요",
+    "Confirm": "확인",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one": "답이 틀렸습니다. 다른 문제를 냅니다",
+    "Too many wrong answers": "틀린 답이 너무 많습니다",
+
+    # --- 密码库告警与切换 ---------------------------------------------------
+    "Password store": "비밀번호 저장소",
+    "Password store unavailable": "비밀번호 저장소를 사용할 수 없음",
+    "{store} holds {count} saved passwords but is unavailable right now.":
+        "'{store}'에 저장된 비밀번호가 {count}개 있지만 "
+        "지금은 사용할 수 없습니다.",
+    "Enable it again in your system settings, or switch to another store — "
+    "switching does not copy the old passwords over, and clearing the old "
+    "store afterwards cannot be undone.":
+        "시스템 설정에서 다시 활성화하거나 다른 저장소로 전환하세요 — "
+        "전환해도 기존 비밀번호가 함께 복사되지 않으며, "
+        "그 후 기존 저장소를 지우면 되돌릴 수 없습니다.",
+    "Open settings": "설정 열기",
+    "{store} is not available right now.":
+        "'{store}'을(를) 지금 사용할 수 없습니다.",
+    "The target store could not be unlocked.":
+        "대상 저장소의 잠금을 해제할 수 없습니다.",
+    "last updated {time}": "마지막 업데이트 {time}",
+    "that store does not report timestamps":
+        "그 저장소는 타임스탬프를 제공하지 않습니다",
+    "Moving saved passwords…": "저장된 비밀번호를 옮기는 중…",
+    "{count} passwords could not be moved:":
+        "{count}개의 비밀번호를 옮기지 못했습니다:",
+    "Retry the import before clearing the old store.":
+        "기존 저장소를 지우기 전에 가져오기를 다시 시도하세요.",
+    "Now using {store}": "'{store}'(으)로 전환했습니다",
+    "Clear the old password store": "기존 비밀번호 저장소 지우기",
+    "Delete the {count} passwords from {store}?":
+        "'{store}'에서 비밀번호 {count}개를 삭제할까요?",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "이제 새 저장소에 저장되어 있습니다. "
+        "여기서 삭제하면 되돌릴 수 없으며, "
+        "그 저장소를 사용하는 다른 프로그램에서도 찾을 수 없게 됩니다.",
+    "Delete them": "삭제",
+    "Deleted {count} passwords from the old store":
+        "기존 저장소에서 비밀번호 {count}개를 삭제했습니다",
+
+    # --- 内置库重置 ---------------------------------------------------------
+    "Reset the built-in vault": "내장 암호화 금고 초기화",
+    "This deletes every password stored in the built-in vault.":
+        "내장 암호화 금고에 저장된 모든 비밀번호가 삭제됩니다.",
+    "They cannot be recovered — not even with the master password. "
+    "Only do this if you no longer need them.":
+        "되돌릴 수 없습니다 — 마스터 비밀번호가 있어도 복구할 수 없습니다. "
+        "더 이상 필요하지 않을 때만 실행하세요.",
+    "Delete the vault": "금고 삭제",
+    "The built-in vault has been reset": "내장 암호화 금고를 초기화했습니다",
+
+    # --- 대상 저장소에 기존 데이터가 있을 때: 유지 / 덮어쓰기 / 병합 --------
+    "{store} already holds {count} of this app's passwords ({when}).":
+        "'{store}'에 이미 이 프로그램의 비밀번호가 {count}개 있습니다 "
+        "({when}).",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.":
+        "'{source}'에도 같은 가상 디스플레이의 비밀번호가 {moving}개 "
+        "있습니다. 어느 쪽을 버리든 그 쪽은 영구적으로 삭제됩니다.",
+    "Keep the target's passwords": "대상 저장소의 비밀번호 유지",
+    "Overwrite with the new passwords": "새 비밀번호로 덮어쓰기",
+    "Merge…": "병합…",
+    "Merge": "병합",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.":
+        "{adding}개는 추가되고, {identical}개는 동일하여 건너뛰고, "
+        "{conflicts}개는 충돌합니다.",
+    "Screens in conflict: {names}": "충돌하는 가상 디스플레이: {names}",
+    "Keep the target's version": "대상 저장소의 버전 유지",
+    "Use the new version": "새 버전 사용",
+    "{count} entries could not be read; they will be left as they are.":
+        "{count}개의 항목을 읽을 수 없습니다. "
+        "해당 항목은 그대로 유지됩니다.",
+
+    # --- 기존 저장소가 잠겨 있을 때: 하나도 옮기지 못한 경우 ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "기존 저장소('{store}')가 잠겨 있어 하나도 옮기지 못했습니다. "
+        "잠금을 해제한 뒤 다시 전환하면 비밀번호를 가져올 수 있습니다.",
 }

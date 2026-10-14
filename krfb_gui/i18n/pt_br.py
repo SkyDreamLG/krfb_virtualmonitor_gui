@@ -52,11 +52,6 @@ CATALOG: dict[str, str] = {
         "A carteira do KDE está fechada; as senhas ficam na memória apenas nesta sessão",
     "kwalletd is not running on the session bus":
         "kwalletd não está em execução no barramento da sessão",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "O subsistema da carteira do KDE está desativado ou não existe nenhuma carteira",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "A carteira não respondeu a tempo; as senhas ficam na memória apenas nesta sessão",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -331,7 +326,6 @@ CATALOG: dict[str, str] = {
     "Launch at login": "Inicialização automática",
     "Start at login (tray mode)": "Iniciar ao entrar (modo bandeja)",
     "Password storage": "Armazenamento de senhas",
-    "Unlock keyring": "Desbloquear chaveiro",
     "Environment": "Ambiente",
     "About": "Sobre",
     "No problems found": "Nenhum problema encontrado",
@@ -357,4 +351,160 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines} linhas   ·   {size} bytes",
     "No match for \"{needle}\"": "Nenhuma ocorrência de “{needle}”",
     "Refreshes every {seconds} s": "Atualiza a cada {seconds} s",
+
+    # --- 密码库（多后端）----------------------------------------------------
+    "KDE Wallet": "KDE Wallet",
+    "System keyring (Secret Service)": "Chaveiro do sistema (Secret Service)",
+    "Built-in encrypted vault": "Cofre criptografado integrado",
+    "Master password required": "Senha mestra obrigatória",
+    "No password vault yet": "Nenhum cofre de senhas ainda",
+    "Enter the master password to unlock the built-in vault":
+        "Digite a senha mestra para desbloquear o cofre integrado",
+    "Set a master password to create the built-in vault":
+        "Defina uma senha mestra para criar o cofre integrado",
+    "The store is disabled or does not exist":
+        "O armazenamento está desativado ou não existe",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "O armazenamento não respondeu a tempo; as senhas ficam na memória "
+        "apenas nesta sessão",
+    "already holds saved passwords": "já contém senhas salvas",
+    "locked; may hold saved passwords": "bloqueado; pode conter senhas salvas",
+    "available": "disponível",
+    "always available": "sempre disponível",
+    "selected in settings": "selecionado nas configurações",
+    "write failed": "falha ao gravar",
+    "read-back mismatch": "leitura de volta divergente",
+    "store is locked": "o armazenamento está bloqueado",
+    "store is busy": "o armazenamento está ocupado",
+    "could not unlock the newly created vault":
+        "não foi possível desbloquear o cofre recém-criado",
+    "there is no vault": "não existe nenhum cofre",
+    "wrong master password": "senha mestra incorreta",
+    "a vault already exists": "já existe um cofre",
+    "some entries could not be decrypted; nothing was changed":
+        "algumas entradas não puderam ser descriptografadas; nada foi alterado",
+    "(currently unavailable)": "(indisponível no momento)",
+    "Store:": "Armazenamento:",
+    "Detect again": "Detectar novamente",
+    "Using {backend}: the selected store is unavailable":
+        "Usando {backend}: o armazenamento selecionado está indisponível",
+    "Master password": "Senha mestra",
+    "Current master password": "Senha mestra atual",
+    "New master password": "Nova senha mestra",
+    "Repeat the password": "Repita a senha",
+    "Create": "Criar",
+    "Change": "Alterar",
+    "Unlock": "Desbloquear",
+    "Unlocked": "Desbloqueado",
+    "Enter master password": "Digite a senha mestra",
+    "Set master password": "Definir a senha mestra",
+    "Change master password": "Alterar a senha mestra",
+    "Create the built-in vault": "Criar o cofre integrado",
+    "Unlock the built-in vault": "Desbloquear o cofre integrado",
+    "Change the master password": "Alterar a senha mestra",
+    "Use at least {count} characters": "Use pelo menos {count} caracteres",
+    "The two passwords do not match": "As duas senhas não coincidem",
+    "Enter the current master password": "Digite a senha mestra atual",
+    "The built-in vault stores passwords encrypted. There is no way "
+    "to recover them if you forget the master password.":
+        "O cofre integrado armazena as senhas criptografadas. Não há como "
+        "recuperá-las se você esquecer a senha mestra.",
+    "Enter the master password for the built-in vault.":
+        "Digite a senha mestra do cofre integrado.",
+    "Changing the master password re-encrypts every password in the vault.":
+        "Alterar a senha mestra criptografa de novo todas as senhas do cofre.",
+    "Wrong master password": "Senha mestra incorreta",
+    "Could not create the vault": "Não foi possível criar o cofre",
+    "The master password has been changed.": "A senha mestra foi alterada.",
+    "Enter the master password to read saved passwords":
+        "Digite a senha mestra para ler as senhas salvas",
+
+    # --- 高危确认（验证码）--------------------------------------------------
+    "Type the result here": "Digite o resultado aqui",
+    "Confirm": "Confirmar",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one": "Resposta errada, aqui está outra",
+    "Too many wrong answers": "Muitas respostas erradas",
+
+    # --- 密码库告警与切换 ---------------------------------------------------
+    "Password store": "Armazenamento de senhas",
+    "Password store unavailable": "Armazenamento de senhas indisponível",
+    "{store} holds {count} saved passwords but is unavailable right now.":
+        "“{store}” contém {count} senhas salvas, mas está indisponível no "
+        "momento.",
+    "Enable it again in your system settings, or switch to another store — "
+    "switching does not copy the old passwords over, and clearing the old "
+    "store afterwards cannot be undone.":
+        "Reative-o nas configurações do sistema ou mude para outro "
+        "armazenamento — a troca não copia as senhas antigas, e limpar o "
+        "armazenamento antigo depois disso não pode ser desfeito.",
+    "Open settings": "Abrir configurações",
+    "{store} is not available right now.":
+        "“{store}” não está disponível no momento.",
+    "The target store could not be unlocked.":
+        "Não foi possível desbloquear o armazenamento de destino.",
+    "last updated {time}": "atualizado pela última vez em {time}",
+    "that store does not report timestamps":
+        "esse armazenamento não informa data e hora",
+    "Moving saved passwords…": "Movendo as senhas salvas…",
+    "{count} passwords could not be moved:":
+        "Não foi possível mover {count} senhas:",
+    "Retry the import before clearing the old store.":
+        "Tente importar novamente antes de limpar o armazenamento antigo.",
+    "Now using {store}": "Agora usando “{store}”",
+    "Clear the old password store":
+        "Limpar os dados do armazenamento antigo",
+    "Delete the {count} passwords from {store}?":
+        "Excluir as {count} senhas de “{store}”?",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "Elas agora estão no novo armazenamento. Excluí-las aqui não pode ser "
+        "desfeito — e qualquer outro aplicativo que use esse armazenamento "
+        "também não as encontrará mais.",
+    "Delete them": "Excluí-las",
+    "Deleted {count} passwords from the old store":
+        "Excluídas {count} senhas do armazenamento antigo",
+
+    # --- 内置库重置 ---------------------------------------------------------
+    "Reset the built-in vault": "Redefinir o cofre integrado",
+    "This deletes every password stored in the built-in vault.":
+        "Isto exclui todas as senhas armazenadas no cofre integrado.",
+    "They cannot be recovered — not even with the master password. "
+    "Only do this if you no longer need them.":
+        "Não será possível recuperá-las — nem mesmo com a senha mestra. Só "
+        "faça isso se não precisar mais delas.",
+    "Delete the vault": "Excluir o cofre",
+    "The built-in vault has been reset": "O cofre integrado foi redefinido",
+
+    # --- 换库时目标已有数据：保留 / 覆盖 / 合并 ----------------------------------------
+    "{store} already holds {count} of this app's passwords ({when}).":
+        "“{store}” já contém {count} senhas deste aplicativo ({when}).",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.":
+        "“{source}” contém {moving} para as mesmas telas. O lado que você "
+        "descartar será excluído em definitivo.",
+    "Keep the target's passwords": "Manter as senhas de destino",
+    "Overwrite with the new passwords":
+        "Substituir pelas senhas novas",
+    "Merge…": "Mesclar…",
+    "Merge": "Mesclar",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.":
+        "{adding} serão adicionadas, {identical} são idênticas e serão "
+        "ignoradas, {conflicts} estão em conflito.",
+    "Screens in conflict: {names}": "Telas em conflito: {names}",
+    "Keep the target's version": "Manter a versão de destino",
+    "Use the new version": "Usar a versão nova",
+    "{count} entries could not be read; they will be left as they are.":
+        "Não foi possível ler {count} entradas; elas permanecerão como "
+        "estão.",
+
+    # --- 换库时源库锁着：一条都没搬，要说清楚 ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "O armazenamento antigo ({store}) está bloqueado, então nada foi "
+        "movido. Desbloqueie-o e faça a troca novamente para trazer as "
+        "senhas.",
 }

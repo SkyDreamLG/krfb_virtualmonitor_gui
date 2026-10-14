@@ -52,11 +52,6 @@ CATALOG: dict[str, str] = {
         "KDE 錢包未解鎖，密碼僅暫存於本次工作階段的記憶體",
     "kwalletd is not running on the session bus":
         "工作階段匯流排上沒有 kwalletd",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "KDE 錢包子系統已關閉，或沒有可用的錢包",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "錢包沒有回應，密碼僅暫存於本次工作階段的記憶體",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -313,7 +308,6 @@ CATALOG: dict[str, str] = {
     "Launch at login": "開機自動啟動",
     "Start at login (tray mode)": "登入時自動啟動（系統匣模式）",
     "Password storage": "密碼儲存",
-    "Unlock keyring": "解鎖金鑰圈",
     "Environment": "環境檢查",
     "About": "關於",
     "No problems found": "未發現問題",
@@ -338,4 +332,138 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines} 行   ·   {size} 位元組",
     "No match for \"{needle}\"": "找不到「{needle}」",
     "Refreshes every {seconds} s": "每 {seconds} 秒重新整理一次",
+
+    # --- 密碼庫（多後端）----------------------------------------------------
+    "KDE Wallet": "KDE 錢包",
+    "System keyring (Secret Service)": "系統金鑰圈（Secret Service）",
+    "Built-in encrypted vault": "內建加密庫",
+    "Master password required": "需要主密碼",
+    "No password vault yet": "還沒有密碼庫",
+    "Enter the master password to unlock the built-in vault":
+        "輸入主密碼以解鎖內建加密庫",
+    "Set a master password to create the built-in vault":
+        "設定主密碼即可建立內建加密庫",
+    "The store is disabled or does not exist": "該密碼庫已停用或不存在",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "密碼庫沒有回應，密碼僅暫存於本次工作階段的記憶體",
+    "already holds saved passwords": "已有儲存的密碼",
+    "locked; may hold saved passwords": "已鎖定，可能存有密碼",
+    "available": "可用",
+    "always available": "永遠可用",
+    "selected in settings": "在設定裡選定的",
+    "write failed": "寫入失敗",
+    "read-back mismatch": "讀回校驗不一致",
+    "store is locked": "密碼庫已鎖定",
+    "store is busy": "密碼庫忙碌（上一次呼叫還沒回來）",
+    "could not unlock the newly created vault": "新建的密碼庫無法解鎖",
+    "there is no vault": "還沒有密碼庫",
+    "wrong master password": "主密碼不正確",
+    "a vault already exists": "密碼庫已存在",
+    "some entries could not be decrypted; nothing was changed":
+        "有項目無法解密，未做任何變更",
+    "(currently unavailable)": "（目前無法使用）",
+    "Store:": "密碼庫：",
+    "Detect again": "立即重新偵測",
+    "Using {backend}: the selected store is unavailable":
+        "正在使用 {backend}：選定的密碼庫無法使用",
+    "Master password": "主密碼",
+    "Current master password": "目前的主密碼",
+    "New master password": "新主密碼",
+    "Repeat the password": "再輸入一次",
+    "Create": "建立",
+    "Change": "變更",
+    "Unlock": "解鎖",
+    "Unlocked": "已解鎖",
+    "Enter master password": "輸入主密碼",
+    "Set master password": "設定主密碼",
+    "Change master password": "變更主密碼",
+    "Create the built-in vault": "建立內建加密庫",
+    "Unlock the built-in vault": "解鎖內建加密庫",
+    "Change the master password": "變更主密碼",
+    "Use at least {count} characters": "至少 {count} 個字元",
+    "The two passwords do not match": "兩次輸入不一致",
+    "Enter the current master password": "請輸入目前的主密碼",
+    "The built-in vault stores passwords encrypted. There is no way "
+    "to recover them if you forget the master password.":
+        "內建加密庫把密碼加密保存。忘記主密碼就沒有任何辦法找回它們。",
+    "Enter the master password for the built-in vault.":
+        "輸入內建加密庫的主密碼。",
+    "Changing the master password re-encrypts every password in the vault.":
+        "變更主密碼會重新加密庫裡的每一筆密碼。",
+    "Wrong master password": "主密碼不正確",
+    "Could not create the vault": "無法建立密碼庫",
+    "The master password has been changed.": "主密碼已變更。",
+    "Enter the master password to read saved passwords":
+        "輸入主密碼才能讀取已儲存的密碼",
+
+    # --- 高危確認（驗證碼）--------------------------------------------------
+    "Type the result here": "在這裡輸入結果",
+    "Confirm": "確認",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one": "答案不對，換一題",
+    "Too many wrong answers": "連續答錯，已取消",
+
+    # --- 密碼庫告警與切換 ---------------------------------------------------
+    "Password store": "密碼庫",
+    "Password store unavailable": "密碼庫無法使用",
+    "{store} holds {count} saved passwords but is unavailable right now.":
+        "「{store}」裡存著 {count} 筆密碼，但現在無法使用。",
+    "Enable it again in your system settings, or switch to another store — "
+    "switching does not copy the old passwords over, and clearing the old "
+    "store afterwards cannot be undone.":
+        "請在系統設定裡重新啟用它，或者換一個密碼庫 —— 換庫不會把這些密碼帶過去，"
+        "之後若選擇清除原資料則無法復原。",
+    "Open settings": "開啟設定",
+    "{store} is not available right now.": "「{store}」目前無法使用。",
+    "The target store could not be unlocked.": "目標密碼庫無法解鎖。",
+    "last updated {time}": "最近更新於 {time}",
+    "that store does not report timestamps": "該密碼庫不提供時間戳",
+    "Moving saved passwords…": "正在搬移已儲存的密碼…",
+    "{count} passwords could not be moved:":
+        "有 {count} 筆密碼沒能搬移：",
+    "Retry the import before clearing the old store.":
+        "請先重試匯入，再清除原密碼庫。",
+    "Now using {store}": "已切換到「{store}」",
+    "Clear the old password store": "清除原密碼庫的資料",
+    "Delete the {count} passwords from {store}?":
+        "要從「{store}」裡刪除這 {count} 筆密碼嗎？",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "它們現在已經在新密碼庫裡了。在這裡刪除無法復原 —— 而且其他使用該密碼庫的"
+        "程式也會找不到它們。",
+    "Delete them": "刪除它們",
+    "Deleted {count} passwords from the old store":
+        "已從原密碼庫刪除 {count} 筆密碼",
+
+    # --- 內建庫重置 ---------------------------------------------------------
+    "Reset the built-in vault": "重置內建加密庫",
+    "This deletes every password stored in the built-in vault.":
+        "這會刪除內建加密庫裡儲存的所有密碼。",
+    "They cannot be recovered — not even with the master password. "
+    "Only do this if you no longer need them.":
+        "它們無法復原 —— 有主密碼也救不回來。只有確定不再需要時才這麼做。",
+    "Delete the vault": "刪除密碼庫",
+    "The built-in vault has been reset": "內建加密庫已重置",
+
+    # --- 换库时目标已有数据：保留 / 覆盖 / 合并 ---
+    "{store} already holds {count} of this app's passwords ({when}).": "「{store}」裡已經有本程式的 {count} 個密碼（{when}）。",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.": "「{source}」裡有同一批虛擬螢幕的 {moving} 個。被放棄的那一邊會被永久刪除。",
+    "Keep the target's passwords": "保留目標裡的密碼",
+    "Overwrite with the new passwords": "用新密碼覆寫",
+    "Merge…": "合併…",
+    "Merge": "合併",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.": "將新增 {adding} 個、{identical} 個完全相同會略過、{conflicts} 個有衝突。",
+    "Screens in conflict: {names}": "衝突的虛擬螢幕：{names}",
+    "Keep the target's version": "衝突時保留目標裡的",
+    "Use the new version": "衝突時用新的",
+    "{count} entries could not be read; they will be left as they are.": "有 {count} 個讀不出來，將保持原樣。",
+
+    # --- 換庫時來源密碼庫鎖著：一個都沒搬，要說清楚 ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "原本的密碼庫「{store}」鎖著，一個都沒能搬過來。解鎖它之後重新切換一次即可帶走密碼。",
 }

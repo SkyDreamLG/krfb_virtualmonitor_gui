@@ -24,6 +24,10 @@ SCHEMA_VERSION = 1
 DEFAULTS: dict[str, str] = {
     "language": "system",     # system / zh_CN / zh_TW / ja / ...（见 i18n.LANGUAGES）
     "close_action": "ask",    # 点窗口关闭按钮时的行为，取值见下面三个常量
+    "password_backend": "kwallet",  # kwallet / secretservice / builtin
+    # 上次在各后端见到过多少条密码（JSON 对象）。用来识别"选中的库突然不可用、
+    # 但里面确实存过东西"这种情况，启动时要弹窗告警。
+    "password_store_seen": "{}",
 }
 
 # close_action 的三个取值
@@ -31,6 +35,18 @@ CLOSE_ASK = "ask"    # 每次都问
 CLOSE_TRAY = "tray"  # 最小化到托盘
 CLOSE_QUIT = "quit"  # 退出程序
 CLOSE_ACTIONS: tuple[str, ...] = (CLOSE_ASK, CLOSE_TRAY, CLOSE_QUIT)
+
+# password_backend 的取值。后端实现在 krfb_gui.secrets 包里，这几个常量放这里
+# 是为了避免 prefs ↔ secrets 互相 import。
+#
+# 没有"自动"这一项了：默认就是 KDE 钱包，**不可用时按 KDE 钱包 → 系统密钥环 →
+# 内置加密库的顺序回落**（回落不改偏好，界面会把实际在用的那个说清楚）。
+# 旧版本存过 "auto" 的配置读到就当成 KDE 钱包 —— "自动"的定义本来就是"优先 KDE"。
+BACKEND_KWALLET = "kwallet"              # KDE 钱包（原生 D-Bus）—— 默认
+BACKEND_SECRET_SERVICE = "secretservice"  # freedesktop Secret Service
+BACKEND_BUILTIN = "builtin"              # 内置加密库
+BACKENDS: tuple[str, ...] = (BACKEND_KWALLET, BACKEND_SECRET_SERVICE, BACKEND_BUILTIN)
+LEGACY_AUTO = "auto"                     # 旧配置里的残值，只用于读取时改写
 
 _cache: dict[str, str] | None = None
 
@@ -75,6 +91,50 @@ def set_close_action(action: str) -> tuple[bool, str]:
     if action not in CLOSE_ACTIONS:
         action = CLOSE_ASK
     return set_value("close_action", action)
+
+
+# --- 密码库选择 -------------------------------------------------------------
+def password_backend() -> str:
+    """用户选的密码库。垃圾值、以及旧版本的 "auto"，一律当 KDE 钱包。"""
+    value = get("password_backend")
+    return value if value in BACKENDS else BACKEND_KWALLET
+
+
+def set_password_backend(key: str) -> tuple[bool, str]:
+    if key not in BACKENDS:
+        key = BACKEND_KWALLET
+    return set_value("password_backend", key)
+
+
+def store_seen() -> dict[str, int]:
+    """上次在各密码库里见到过多少条密码。
+
+    用来认"选中的库突然不可用、但它里面确实存过东西"——这种情况下要弹窗告警，
+    否则用户只会看到"密码全没了"。读坏了就当空。
+    """
+    raw = get("password_store_seen") or "{}"
+    try:
+        parsed = json.loads(raw)
+    except ValueError:
+        return {}
+    if not isinstance(parsed, dict):
+        return {}
+    result: dict[str, int] = {}
+    for key, value in parsed.items():
+        if key in BACKENDS and isinstance(value, (int, float)):
+            result[str(key)] = int(value)
+    return result
+
+
+def note_store_seen(key: str, count: int) -> None:
+    """记下某个密码库里有几条密码。只在探测到数据时调用。"""
+    if key not in BACKENDS:
+        return
+    seen = store_seen()
+    if seen.get(key) == count:
+        return  # 没变就不写盘
+    seen[key] = count
+    set_value("password_store_seen", json.dumps(seen))
 
 
 # --- 内部 --------------------------------------------------------------------

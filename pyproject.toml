@@ -18,13 +18,16 @@ classifiers = [
     "Topic :: System :: Networking",
 ]
 dependencies = [
-    # 密码存储走 KDE 钱包的原生 D-Bus 接口（org.kde.KWallet）。
-    # 不再用 keyring：它的 KWallet 后端需要 dbus-python（要编译），而且只支持
-    # kwalletd5；直接调 D-Bus 反而更简单，jeepney 是纯 Python 的。
+    # 密码存储有三个后端（KDE 钱包 / 系统 Secret Service / 内置加密库）：
+    #   * KDE 钱包走原生 D-Bus（org.kde.KWallet），不再用 keyring —— 它的 KWallet
+    #     后端需要 dbus-python（要编译），而且只支持 kwalletd5；直接调 D-Bus 更简单，
+    #     jeepney 是纯 Python 的；
+    #   * 系统密钥环那个后端用 secretstorage；
+    #   * 内置加密库用 cryptography 的 Fernet（AES-128-CBC + HMAC），密钥用
+    #     hashlib.scrypt 从主密码派生。
+    "cryptography>=43",
     "jeepney>=0.8",
     "pyside6-essentials>=6.12.0",
-    # 只用于一次性迁移：把旧版本存在 freedesktop Secret Service 里的密码搬进
-    # KDE 钱包（见 krfb_gui/secrets.py 的 _import_legacy）。搬完就用不到了。
     "secretstorage>=3.5.0",
 ]
 

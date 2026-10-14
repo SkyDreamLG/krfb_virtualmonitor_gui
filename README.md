@@ -2,8 +2,8 @@
 
 # Krfb Virtual Screen Manager
 
-**A desktop GUI for `krfb-virtualmonitor` — create, manage, and monitor KDE's
-virtual displays without touching the command line.**
+**A desktop GUI for `krfb-virtualmonitor` — create, manage, and monitor KDE virtual
+displays without using the command line.**
 
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
@@ -16,67 +16,79 @@ virtual displays without touching the command line.**
 
 ## Overview
 
-`krfb-virtualmonitor` is the command-line tool shipped with [krfb](https://invent.kde.org/network/krfb),
-KDE's VNC server. It creates **virtual displays** on top of KWin — extra monitors
-that exist only in software, perfect for headless remote access, software KVM setups,
-or driving a tablet as a second screen.
+`krfb-virtualmonitor` ships with [krfb](https://invent.kde.org/network/krfb), KDE's
+VNC server. It creates **virtual displays** on top of KWin: additional monitors that
+exist only in software, used for headless remote access, software KVM setups, and
+tablets configured as secondary screens.
 
-It is powerful but bare: every adjustment means re-typing a long command with a
-plaintext password, and there is no way to see which screens are running. This
-project wraps the whole thing in a native Qt6 desktop application with two
-non-negotiable guarantees:
+The tool is capable but stateless. Every adjustment requires re-entering a full
+command line including a plaintext password, and there is no way to see which
+screens are currently running. This project provides a native Qt6 front end for it,
+built around two invariants:
 
-> **1. Closing the GUI never affects running virtual screens.**
-> **2. Reopening the GUI always re-adopts them.**
+> **1. Closing the GUI never affects a running virtual screen.**
+> **2. Reopening the GUI re-adopts every running virtual screen.**
 
 ## Features
 
-- **Full lifecycle management** — create, edit, start, stop, and delete virtual
-  screens from a list/detail interface, individually or all at once.
-- **Truthful state tracking** — a screen counts as "running" only when its process
-  is genuinely alive *and* KWin has actually materialized the `Virtual-<name>`
-  output. States are explicit: running, starting, stopped, crashed, failed, unmanaged.
-- **Survives GUI restarts** — screens are detached into their own session, and the
-  GUI re-identifies them by `(name, port)` with `pid + starttime` liveness checks
-  (PID-reuse and zombie-proof).
-- **Adopt external processes** — launched `krfb-virtualmonitor` by hand? The
-  **Scan** action finds it in `/proc` and takes it over, password included.
-- **Password vaulting** — passwords live in **KDE Wallet**, reached through
-  kwalletd's native `org.kde.KWallet` D-Bus interface (not the generic
-  `org.freedesktop.secrets` name, which any installed implementation can claim —
-  on a machine with gnome-keyring around, that would silently put your passwords
-  in the wrong store). Passwords never appear in config files. If the wallet is
-  locked or disabled, the app offers to unlock it at startup and otherwise
-  degrades to session-only memory, saying so explicitly — it never blocks or hangs.
-- **Requested vs. actual values, side by side** — KWin is known to override the
-  `--scale` request; the UI shows what was asked for *and* what KWin actually
-  applied, and highlights any mismatch.
+- **Lifecycle management** — create, edit, start, stop and delete virtual screens
+  from a list/detail interface, individually or in bulk.
+- **Verified state tracking** — a screen is reported as running only when its process
+  is alive *and* KWin has materialized the corresponding `Virtual-<name>` output.
+  States are distinct: running, starting, stopped, crashed, failed, unmanaged.
+- **Persistence across GUI restarts** — screens are detached into their own session.
+  The GUI re-identifies them by `(name, port)` and verifies liveness with
+  `pid + starttime`, which is immune to PID reuse and to zombie processes.
+- **Adoption of external processes** — a `krfb-virtualmonitor` started by hand is
+  located in `/proc` by the *Scan* action and taken under management, password
+  included.
+- **Three password stores** — **KDE Wallet** (via kwalletd's native
+  `org.kde.KWallet` D-Bus interface, not the generic `org.freedesktop.secrets` name
+  that any installed implementation may claim), the **system keyring** (Secret
+  Service), and a **built-in encrypted vault** (SQLite; every value encrypted with a
+  key derived from a user-set master password, `scrypt` → Fernet). The default is
+  KDE Wallet. The store is selected in Settings, where only usable stores are
+  listed; if the selected store is unavailable the application falls back to the
+  system keyring and then to the built-in vault, and reports which store is in use.
+  The preference is not modified by a fallback, so the selected store is used again
+  as soon as it becomes available. Changing stores offers to migrate the passwords;
+  if the target already holds passwords for this application, the choice is to keep
+  the target's, overwrite them with the current ones, or merge — merging compares
+  both sides first, reports the screens that conflict, and asks which version wins.
+  Clearing the source store is a separate, separately confirmed step. Passwords are
+  never written to configuration files. Locked stores are unlocked at startup on
+  request; a store that becomes unavailable while holding passwords triggers a
+  warning dialog rather than a silent "no saved password".
+- **Requested and effective values, side by side** — KWin may override the `--scale`
+  request. The UI shows both the requested and the effective values and flags any
+  mismatch.
 - **Live log viewer** — per-screen krfb output, streamed incrementally.
-- **Environment self-check** — at startup the app verifies `krfb-virtualmonitor`,
-  the Wayland socket, `kscreen-doctor` health, and systemd cgroup semantics, and
-  reports anything that would break the two guarantees above.
-- **Login autostart** — one application-level `.desktop` restores every screen
-  marked *desired running*. No plaintext passwords ever touch disk.
-- **Desktop-native UX** — system tray with single-instance handling, light/dark
-  theming that follows the system palette, and a live command-line preview of
-  exactly what the GUI is about to execute.
-- **11 UI languages** — English, Simplified & Traditional Chinese, Japanese, Korean,
-  German, French, Spanish, Italian, Brazilian Portuguese and Russian. The interface
-  follows the system language by default and can be switched instantly from
-  Settings → Language (no restart).
-- **Your call on closing** — the title-bar X can minimize to the tray, quit the
-  program, or ask every time (with a *remember my choice* checkbox). Also
-  configurable in Settings → Closing the window.
+- **Environment self-check** — at startup the application verifies
+  `krfb-virtualmonitor`, the Wayland socket, `kscreen-doctor` health and systemd
+  cgroup semantics, and reports any condition that would violate the two invariants
+  above.
+- **Login autostart** — a single application-level `.desktop` entry restores every
+  screen marked *desired running*.
+- **Desktop integration** — system tray with single-instance handling, light/dark
+  theming that follows the system palette, and a live preview of the exact command
+  line the GUI is about to execute.
+- **11 UI languages** — English, Simplified and Traditional Chinese, Japanese,
+  Korean, German, French, Spanish, Italian, Brazilian Portuguese and Russian. The
+  interface follows the system language by default and can be switched without
+  restarting from Settings → Language.
+- **Configurable close behaviour** — the title-bar close button can minimize to the
+  tray, quit the application, or ask each time (with a *remember my choice*
+  checkbox). Also configurable under Settings → Closing the window.
 
 ## Requirements
 
 | Component | Requirement |
 |---|---|
-| Session | **Wayland running KWin** (KDE Plasma). Virtual displays are a KWin-only feature — GNOME/X11 cannot work, and the app tells you why at startup. |
+| Session | **Wayland running KWin** (KDE Plasma). Virtual displays are a KWin-only feature; the application reports the reason at startup on unsupported sessions. |
 | krfb | The `krfb` package on Arch / Debian / Ubuntu / Fedora — it provides `/usr/bin/krfb-virtualmonitor`. |
-| kscreen | `kscreen-doctor` — strongly recommended. Used to read back the *real* resolution/scale and to fix up overridden `--scale` values. |
-| kwallet | `kwalletd6` (KDE Wallet) — required for password storage. If the wallet subsystem is switched off in System Settings, the app says so and keeps passwords in memory for the session only. |
-| Python | 3.11+ (source run only; the packaged build needs nothing preinstalled). |
+| kscreen | `kscreen-doctor` — strongly recommended. Used to read back the effective resolution and scale, and to correct overridden `--scale` values. |
+| kwallet | `kwalletd6` (KDE Wallet) — the default password store. If the wallet subsystem is disabled in System Settings, the application falls back to the system keyring or the built-in vault. |
+| Python | 3.11+ (source run only; the packaged build requires nothing preinstalled). |
 | Tooling | [uv](https://docs.astral.sh/uv/) for dependency management. |
 
 ## Quick Start
@@ -98,51 +110,62 @@ Or invoke the entry point directly:
 
 ## Building a Standalone Executable
 
-The build script produces a **onedir** bundle (executable + `_internal/`) that runs
-on any Linux machine — no Python, no virtualenv, no dependencies required:
+`packaging/build.sh` produces a **single file** that runs on any Linux machine
+without Python, a virtualenv or any installed dependency:
 
 ```bash
-packaging/build.sh
-./dist/krfb-virtualmonitor-gui/krfb-virtualmonitor-gui
+packaging/build.sh            # → dist/krfb-virtualmonitor-gui   (66 MB)
+./dist/krfb-virtualmonitor-gui
 ```
 
-`onedir` is a deliberate choice: PyInstaller's onefile mode would decompress
-hundreds of megabytes into `/tmp` on every launch, which is a poor fit for an
-always-available tray application.
+That file unpacks approximately 170 MB into `$TMPDIR` on every launch (0.79 s
+measured on the reference machine, against 0.21 s for an already-unpacked build).
+A directory build avoids the repeated extraction:
 
-To add the app to the KDE application menu and `~/.local/bin`:
+```bash
+packaging/build.sh --onedir   # → dist/onedir/krfb-virtualmonitor-gui/
+```
+
+Use the single file when one artifact has to be copied between machines; use
+`--onedir` when the application is installed long-term, particularly with login
+autostart, where every session pays the extraction cost. Both layouts can coexist
+in `dist/`.
+
+An AppImage was evaluated and not adopted: it requires `appimagetool` and libfuse2,
+which Ubuntu 24.04 and later no longer install by default, and without FUSE it
+extracts the bundle at launch exactly as the single-file build does.
+
+To add the application to the KDE application menu and `~/.local/bin`:
 
 ```bash
 packaging/install-desktop.sh              # install
 packaging/install-desktop.sh --uninstall  # remove
 ```
 
-The desktop launcher prefers the packaged build and falls back to running from
-source via `.venv` if the bundle has not been built.
+The desktop launcher prefers a packaged build and falls back to running from source
+through `.venv` if no bundle has been built.
 
 ## Usage
 
-1. **Create a screen** — click *New*, pick a name, resolution (presets or custom),
-   scale, and port. The dialog shows the exact command line it will run, live.
-2. **Start it** — the app launches `krfb-virtualmonitor`, then waits (up to 8 s)
-   for KWin to report the `Virtual-<name>` output. Only then is it "running".
-   If KWin overrode the requested scale, it is corrected via `kscreen-doctor` and
-   the actual values are read back into the detail pane.
-3. **Connect** — point any VNC client at `localhost:<port>`. The password is the
-   one generated (or entered) in the dialog, retrievable from the detail pane.
-4. **Walk away** — close the window (or the whole GUI): the screens keep running.
-   Reopen later; everything is re-adopted and the logs are still there.
-5. **Adopt strays** — if you started krfb from a terminal, *Scan* imports it,
-   password included, and it becomes fully managed.
+1. **Create a screen** — click *New* and specify a name, resolution (preset or
+   custom), scale and port. The dialog shows the exact command line it will run.
+2. **Start it** — the application launches `krfb-virtualmonitor` and waits (up to
+   8 s) for KWin to report the `Virtual-<name>` output; only then is the screen
+   considered running. If KWin overrode the requested scale, it is corrected through
+   `kscreen-doctor` and the effective values are read back into the detail pane.
+3. **Connect** — point any VNC client at `localhost:<port>`, using the password
+   generated (or entered) in the dialog, which the detail pane can display.
+4. **Close the GUI** — the screens keep running. Reopening the application re-adopts
+   them and retains their logs.
+5. **Adopt unmanaged processes** — a krfb instance started from a terminal is
+   imported by *Scan*, password included, and becomes fully managed.
 
-Login autostart is a toggle in *Settings*: when enabled, the GUI starts in the
-tray at login and restores every screen marked as *desired running*. It
-deliberately writes **one application-level entry** rather than one `.desktop`
-per screen — a per-screen entry would have to embed `--password` in plaintext
-inside a world-readable `0644` desktop file, defeating the entire point of
-keyring storage. Starting the GUI instead keeps passwords off disk completely.
-(The unit KDE's autostart generator derives from the entry is `ExitType=cgroup`,
-which is the safe case — see the cgroup note below.)
+Login autostart is a toggle in *Settings*: when enabled, the GUI starts in the tray
+at login and restores every screen marked as *desired running*. It writes **one
+application-level entry**, not one `.desktop` file per screen: a per-screen entry
+would have to embed `--password` in plaintext inside a `0644` desktop file, which
+would negate the purpose of keyring storage. Starting the GUI instead keeps
+passwords off disk entirely.
 
 ## Architecture
 
@@ -154,27 +177,35 @@ krfb_gui/
   store.py                  Atomic JSON persistence (tmp + fsync + rename)
   proctools.py              Pure /proc readers: starttime, zombies, ports, argv
   envtools.py               Sanitized child environment — the ONLY way to spawn
-  kscreen.py                kscreen-doctor parsing; real output readback
+  kscreen.py                kscreen-doctor parsing; effective output readback
   manager.py                Lifecycle: spawn/stop/state, adoption, self-check
-  secrets.py                KDE Wallet client with hard timeouts; degrades to
-                            session-only memory, never blocks
+  secrets/                  Password stores: KDE Wallet / system keyring /
+                            built-in encrypted vault, behind one facade with
+                            hard timeouts and a non-blocking fallback
+  prefs.py                  UI preferences (language, close behaviour, and the
+                            selected password store)
+  i18n/                     Translation catalogs for 11 languages
   autostart.py              Single application-level .desktop autostart
   ui/                       Main window, screen list, detail pane, dialogs,
                             log viewer, theming, embedded SVG icons, vector art
 tests/
   test_persistence.py       Two-process GUI-restart re-adoption test
+  test_i18n.py              Translation catalog completeness and consistency
+  test_vault.py             Built-in vault KDF, storage and reset semantics
+  test_backends.py          Store selection, migration and merge logic
   test_child_env.py         Packaged-build child environment regression
   test_process_state.py     Zombie-process liveness regression
 ```
 
-Two design rules shape everything:
+Two design rules apply throughout:
 
-**Config and runtime state are separate files.** `Screen` is user intent, written
-only when settings change; `Runtime` is observed reality (pid, actual resolution),
-rewritten on every process event. Mixing them would rewrite the config file on
-every poll, and let two GUI instances clobber each other's updates.
+**Configuration and runtime state are stored separately.** `Screen` represents user
+intent and is written only when settings change; `Runtime` represents observed
+reality (pid, effective resolution) and is rewritten on every process event.
+Combining them would rewrite the configuration file on every poll and allow two GUI
+instances to overwrite each other's updates.
 
-**Data modules never import Qt.** `manager`, `store`, `proctools`, `kscreen`,
+**Data modules do not import Qt.** `manager`, `store`, `proctools`, `kscreen`,
 `envtools`, `secrets` and `autostart` are pure Python and independently testable;
 `ui/` is the only layer that depends on PySide6.
 
@@ -183,16 +214,22 @@ every poll, and let two GUI instances clobber each other's updates.
 | What | Where | Mode |
 |---|---|---|
 | Screen configuration (no passwords) | `~/.config/krfb-virtualmonitor-gui/screens.json` | `0600` |
-| Runtime state (pids, observed values) | `~/.local/state/krfb-virtualmonitor-gui/runtime.json` | `0600` |
+| Runtime state (pids, effective values) | `~/.local/state/krfb-virtualmonitor-gui/runtime.json` | `0600` |
 | Per-screen logs | `~/.local/state/krfb-virtualmonitor-gui/logs/<id>.log` | `0600` |
-| Passwords | KDE Wallet (`kdewallet`, via `org.kde.KWallet`) | — |
+| Passwords | KDE Wallet / system keyring / built-in vault (selected in Settings) | — |
+| Built-in vault (only if selected) | `~/.local/share/krfb-virtualmonitor-gui/vault.db` | `0600` |
 | Autostart entry | `~/.config/autostart/krfb-virtualmonitor-gui.desktop` | `0644` |
 
-Passwords are stored in the standard *Passwords* folder of the KDE wallet, keyed by
-the screen's stable UUID — which is also why screen identity never depends on pid.
-(Upgrading from an older build? On the first read the app moves any password still
-sitting in the freedesktop Secret Service into the wallet — read-only, nothing is
-deleted.)
+Passwords are keyed by the screen's stable UUID in every store, which is also why
+screen identity never depends on a pid. In KDE Wallet they are stored in the
+standard *Passwords* folder. In the built-in vault each value is encrypted
+individually as `screen_id + separator + password`, so a ciphertext copied between
+rows is rejected; the master password is never stored, only a verifier derived from
+a separate half of the scrypt output. A forgotten master password cannot be
+recovered: resetting the vault deletes its contents after a confirmation that
+requires solving an arithmetic challenge. Installations upgraded from an earlier
+build can migrate anything still held by the previously used store from
+Settings → Password storage; nothing is deleted unless explicitly requested.
 
 ## Testing
 
@@ -204,129 +241,140 @@ deleted.)
 .venv/bin/python tests/test_persistence.py --phase b
 ```
 
-The two phases run in **separate Python processes** — that is the whole point:
-it is the only way to actually prove "the virtual screen outlives the GUI, and a
-fresh GUI can take it over". Test state lives in
-`/tmp/krfb-virtualmonitor-gui-test` (override with `KRBFTEST_DIR`) and never
-touches your real configuration.
+The two phases run in **separate Python processes**, which is the only way to verify
+that a virtual screen outlives the GUI and that a fresh GUI can take it over. Test
+state is written to `/tmp/krfb-virtualmonitor-gui-test` (override with
+`KRBFTEST_DIR`) and never touches the real configuration.
 
-Two further regression suites run without a display, a build, or any GUI:
+The remaining suites require neither a build nor a display server:
 
 ```bash
-.venv/bin/python tests/test_child_env.py      # packaged-build child env hygiene
-.venv/bin/python tests/test_process_state.py  # zombies must not count as "running"
+.venv/bin/python tests/test_i18n.py          # catalog completeness and consistency
+.venv/bin/python tests/test_vault.py         # vault KDF, storage and reset
+.venv/bin/python tests/test_backends.py      # store selection, migration and merge
+.venv/bin/python tests/test_child_env.py     # packaged-build child environment
+.venv/bin/python tests/test_process_state.py # zombies must not count as running
 ```
 
-`test_child_env.py` simulates PyInstaller's `LD_LIBRARY_PATH` injection, asserts
-that `kscreen-doctor` / `krfb --version` still work under it, and scans the source
-tree for any bare `subprocess` call that bypasses the sanitizer.
-`test_process_state.py` spawns real zombie processes and asserts the liveness
-rules against them.
+`test_i18n.py` parses every `tr()` call in the source tree and verifies that each
+literal is present in all catalogs with matching placeholders. `test_vault.py` pins
+the KDF parameters and verifies persistence, tamper rejection and reset semantics
+across processes. `test_backends.py` covers store selection, the fallback chain,
+migration and merge planning against in-memory backends. `test_child_env.py`
+simulates PyInstaller's `LD_LIBRARY_PATH` injection, asserts that `kscreen-doctor`
+and `krfb --version` still work under it, and scans the source tree for any
+`subprocess` call that bypasses the sanitizer. `test_process_state.py` spawns real
+zombie processes and asserts the liveness rules against them.
 
-## Engineering Notes
+## Technical Notes
 
-The interesting parts of this project are the failure modes it had to survive.
-Each one below was observed on real hardware, and each has a fix plus (where
-possible) a regression test.
+The following constraints were established on real hardware and are handled
+explicitly by the implementation; most of them have a regression test.
 
-### Zombie processes masquerade as "running"
+### Zombie processes are reported as running
 
-krfb exits within ~1 s of `SIGTERM` and KWin drops the virtual output within ~3 s —
-but the GUI showed "running" for over a minute. Reason: krfb is the GUI's child,
-and the parent never `waitpid`s, so the process becomes a **zombie**.
-`/proc/<pid>/stat` still exists and `starttime` is unchanged, so an
-identity check passes. The zombie is only reaped opportunistically — `subprocess`
-runs `_cleanup()` the next time a child is created. Fix: liveness additionally
-rejects the `Z` state character, and "Stop" records the user's intent *before*
-identity verification (a zombie's `/proc/<pid>/exe` is unreadable, so verification
-necessarily fails — but "the user doesn't want this running" must still be honored,
-or the UI raises a bogus crash banner).
+krfb exits within about 1 s of `SIGTERM` and KWin drops the virtual output within
+about 3 s, but a process that has exited without being reaped remains as a zombie:
+`/proc/<pid>/stat` still exists and `starttime` is unchanged, so an identity check
+passes. Because krfb is a child of the GUI, it is only reaped opportunistically,
+when the next child process is created.
 
-### `--scale` is effectively ignored
+*Handling:* liveness checks additionally reject the `Z` state character, and the
+*Stop* action records the user's intent before identity verification. A zombie's
+`/proc/<pid>/exe` is unreadable, so verification necessarily fails — but the intent
+must still be honored, or the UI would raise a spurious crash notification.
 
-Requesting `--scale 1.25` or `1.5` yielded **1.75** every time. KWin persists a
-per-output configuration in `kwinoutputconfig.json`, and **every newly created
-virtual display is assigned the same UUID** — so stale config for that UUID
-always wins over the command-line request. Fix: after the output appears, set the
-scale explicitly with `kscreen-doctor output.<connector>.scale.<value>`, then read
-back the true values. The UI displays requested and actual values separately and
-flags mismatches.
+### `--scale` is overridden by persisted KWin output configuration
 
-### Opening the wallet can hang the app forever
+KWin persists per-output configuration in `kwinoutputconfig.json`, and every newly
+created virtual display receives the same UUID. Stale configuration for that UUID
+takes precedence over the command-line request, so a requested scale of 1.25 or 1.5
+takes effect as 1.75.
 
-`kwalletd`'s `open()` pops the wallet password prompt, and **D-Bus calls have no
-timeout of their own**. If the prompt can't be displayed (headless, started from a
-systemd unit, prompter broken), that call never returns. Fix: probing only uses
-calls that can't prompt (`isEnabled`, `isOpen`), every wallet call runs on a
-daemon thread with a 2 s timeout, and anything that might prompt is additionally
-confined to the explicit unlock path — never the polling/refresh path. When the
-wallet stays shut, the app degrades to session-only memory with a clear UI label.
-**The startup path never depends on the wallet succeeding.** (Daemon threads, not
-a `ThreadPoolExecutor` — the executor joins its workers at interpreter exit, which
-would reintroduce the hang.)
+*Handling:* once the output appears, the scale is set explicitly with
+`kscreen-doctor output.<connector>.scale.<value>`, after which the effective values
+are read back. The UI displays requested and effective values separately and flags
+mismatches.
 
-### VNC passwords are 8 characters, full stop
+### `kwalletd` unlock calls can block indefinitely
 
-krfb links against libvncserver, which uses classic VNC DES authentication —
-**only the first 8 characters of the password are ever used**. The generator
-therefore produces exactly 8 characters, and the UI says so. Handing users a
-32-character password that only contributes 8 characters of entropy is security
-theater.
+`open()` causes kwalletd to display its own password prompt, and D-Bus calls have no
+timeout of their own. If the prompt cannot be displayed — headless session, systemd
+unit, or a broken prompter — the call never returns.
 
-### Passwords are visible to other local users
+*Handling:* probing uses only calls that cannot prompt (`isEnabled`, `isOpen`); every
+wallet call runs on a daemon thread with a 2 s timeout; and anything that may prompt
+is confined to the explicit unlock path, never the polling path. While the wallet
+remains closed, the application uses the fallback chain described under *Features*.
+The startup path never depends on the wallet succeeding. Daemon threads are used
+rather than a `ThreadPoolExecutor`, because the executor joins its workers at
+interpreter exit and would reintroduce the hang.
 
-Passwords are passed via `--password`, and `/proc/<pid>/cmdline` is mode `0444` —
-world-readable. krfb offers no stdin/environment alternative and no
-loopback-only binding, so this cannot be fixed at the wrapper level. The UI
-discloses it plainly rather than pretending otherwise.
+### VNC authentication uses 8 characters
 
-### "Started" ≠ "virtual display created"
+krfb links against libvncserver, which implements classic VNC DES authentication:
+only the first 8 characters of a password are used.
 
-krfb will report a portal error yet still listen on the port. The only reliable
-proof of success is KWin actually listing the `Virtual-<name>` output. When
-`kscreen-doctor` is unavailable or unhealthy, the check degrades to port-listening
-— a weaker but honest signal, chosen so a real screen is never misreported as failed.
+*Handling:* the generator produces exactly 8 characters and the UI states the limit.
+Longer passwords would contribute no additional entropy.
 
-### Packaged builds poison child processes
+### Passwords are exposed through `/proc/<pid>/cmdline`
 
-PyInstaller's Linux bootloader injects `LD_LIBRARY_PATH=<bundle>/_internal:...`
-into the GUI's own environment so it can load the bundled Qt6. Every child
-process inherits it — and every helper this app runs (`krfb-virtualmonitor`,
-`kscreen-doctor`, `systemctl`) is a *system* Qt program that will then load the
-wrong libQt6 and abort (SIGABRT, empty stdout). The consequences are severe:
-`list_outputs()` returns empty forever, so start verification always "times out"
-after 8 s, wipes the runtime record, and orphans the process.
+Passwords are passed via `--password`, and `/proc/<pid>/cmdline` is world-readable
+(mode `0444`). krfb offers neither a stdin/environment alternative nor loopback-only
+binding, so this cannot be addressed at the wrapper level.
 
-Fix: a strict environment whitelist (`ENV_PASSTHROUGH` in `constants.py`) strips
-`LD_LIBRARY_PATH` / `PYTHONPATH` / `QT_*` and friends, and **every** external
-command goes through `envtools.run_helper()`. A static rule in
-`tests/test_child_env.py` fails the build if a bare `subprocess` call ever
-reappears. Two related fallbacks: if `kscreen-doctor` is entirely unusable,
-start verification degrades to port-checking (as promised by the environment
-self-check), and identity is never cleared while the process is in fact alive.
+*Handling:* the UI discloses the exposure rather than implying otherwise.
 
-### Systemd cgroups can kill your screens
+### Process start does not imply that the output exists
 
-`setsid()` defeats `SIGHUP`, not cgroup-level cleanup. If the GUI is started from
-a unit with `KillMode=control-group` + `ExitType=main`, exiting the GUI SIGTERMs
-the entire cgroup — taking every virtual screen with it. The app detects this at
-startup and explains the fix (`ExitType=cgroup`, or launch from the desktop
-launcher as usual).
+krfb can report a portal error and still listen on its port. The only reliable
+confirmation of success is KWin listing the `Virtual-<name>` output.
+
+*Handling:* when `kscreen-doctor` is unavailable or unhealthy, the check degrades to
+port listening — a weaker but honest signal, selected so that a working screen is
+never reported as failed.
+
+### Packaged builds inherit the bundle's library path
+
+PyInstaller's Linux bootloader injects `LD_LIBRARY_PATH=<bundle>/_internal:...` into
+the application's environment so that the bundled Qt6 can be loaded. Every child
+process inherits it, and every helper this application executes
+(`krfb-virtualmonitor`, `kscreen-doctor`, `systemctl`) is a system Qt program that
+would then load a mismatched libQt6 and abort with `SIGABRT`. The consequence is
+severe: `list_outputs()` returns nothing, start verification times out after 8 s,
+the runtime record is discarded, and the process is orphaned.
+
+*Handling:* a strict environment whitelist (`ENV_PASSTHROUGH` in `constants.py`)
+strips `LD_LIBRARY_PATH`, `PYTHONPATH`, `QT_*` and related variables, and every
+external command goes through `envtools.run_helper()`. A static check in
+`tests/test_child_env.py` fails if a bare `subprocess` call reappears. If
+`kscreen-doctor` is unusable, start verification degrades to port checking, and
+identity is never cleared while the process is in fact alive.
+
+### systemd cgroup cleanup can terminate all screens
+
+`setsid()` defeats `SIGHUP` but not cgroup-level cleanup. If the GUI is started from
+a unit configured with `KillMode=control-group` and `ExitType=main`, exiting the GUI
+sends `SIGTERM` to the entire cgroup, terminating every virtual screen with it.
+
+*Handling:* the condition is detected at startup and the remedy is reported
+(`ExitType=cgroup`, or launching from the desktop launcher).
 
 ## Known Limitations
 
-- **Wayland + KWin only.** Virtual monitors require compositor support that, as of
-  today, only KWin implements.
-- **Passwords readable via `/proc/<pid>/cmdline`** by other local users (krfb
-  limitation, disclosed in the UI).
+- **Wayland with KWin only.** Virtual monitors require compositor support that only
+  KWin implements.
+- **Passwords are readable through `/proc/<pid>/cmdline`** by other local users
+  (krfb limitation, disclosed in the UI).
 - **VNC authentication uses 8 characters**, regardless of password length.
-- **In the packaged build**, the log viewer's "Open containing folder" button goes
-  through `QDesktopServices` → `xdg-open`, a Qt-internal fork that cannot receive
-  a sanitized environment — so it still carries the bundle's `LD_LIBRARY_PATH` and
-  the file manager may fail to launch. Scope: that one button.
-- **Autostart must be toggled off/on** when switching between running from source
-  and running the packaged build, because the `.desktop` entry records the path of
-  the launcher that wrote it.
+- **In the packaged build**, the log viewer's *Open containing folder* button uses
+  `QDesktopServices` → `xdg-open`, a Qt-internal fork that cannot receive a sanitized
+  environment. It therefore still carries the bundle's `LD_LIBRARY_PATH`, and the
+  file manager may fail to launch. The scope is limited to that one button.
+- **Autostart must be toggled off and on again** when switching between a source run
+  and a packaged build, because the `.desktop` entry records the path of the launcher
+  that wrote it.
 
 ## License
 

@@ -48,7 +48,8 @@ class ScreenState(Enum):
 
 @dataclass
 class Screen:
-    """一个虚拟屏的用户配置。不含密码 —— 密码存在 Secret Service 里，以 id 为键。"""
+    """一个虚拟屏的用户配置。不含密码 —— 密码存在密码库（KDE 钱包 / 系统密钥环 /
+    内置加密库，见 krfb_gui/secrets/）里，以 id 为键。"""
 
     name: str
     width: int = C.DEFAULT_RESOLUTION[0]

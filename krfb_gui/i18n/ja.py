@@ -47,11 +47,6 @@ CATALOG: dict[str, str] = {
         "KDE ウォレットが閉じられています。パスワードは今回のセッションの間だけメモリに保持されます",
     "kwalletd is not running on the session bus":
         "セッションバスに kwalletd がありません",
-    "The KDE wallet subsystem is disabled, or no wallet exists":
-        "KDE ウォレット機能が無効になっているか、ウォレットが存在しません",
-    "The wallet did not respond in time; passwords are kept in "
-    "memory for this session only":
-        "ウォレットが時間内に応答しませんでした。パスワードは今回のセッションの間だけメモリに保持されます",
 
     # --- store --------------------------------------------------------------
     "Cannot parse the config file: {path}":
@@ -334,7 +329,6 @@ CATALOG: dict[str, str] = {
     "Launch at login": "ログイン時に起動",
     "Start at login (tray mode)": "ログイン時に起動（トレイモード）",
     "Password storage": "パスワードの保存",
-    "Unlock keyring": "キーリングのロックを解除",
     "Environment": "環境",
     "About": "このアプリについて",
     "No problems found": "問題は見つかりませんでした",
@@ -361,4 +355,163 @@ CATALOG: dict[str, str] = {
         "{path}   ·   {lines} 行   ·   {size} バイト",
     "No match for \"{needle}\"": "「{needle}」に一致するものはありません",
     "Refreshes every {seconds} s": "{seconds} 秒ごとに更新",
+
+    # --- 密码库（多后端）----------------------------------------------------
+    "KDE Wallet": "KDE ウォレット",
+    "System keyring (Secret Service)": "システムキーリング（Secret Service）",
+    "Built-in encrypted vault": "内蔵の暗号化保管庫",
+    "Master password required": "マスターパスワードが必要",
+    "No password vault yet": "パスワード保管庫はまだありません",
+    "Enter the master password to unlock the built-in vault":
+        "マスターパスワードを入力して内蔵の暗号化保管庫のロックを解除してください",
+    "Set a master password to create the built-in vault":
+        "マスターパスワードを設定すると内蔵の暗号化保管庫を作成できます",
+    "The store is disabled or does not exist":
+        "ストアが無効になっているか、存在しません",
+    "The store did not respond in time; passwords are kept in memory "
+    "for this session only":
+        "ストアが時間内に応答しませんでした。パスワードは"
+        "今回のセッションの間だけメモリに保持されます",
+    "already holds saved passwords": "保存されたパスワードあり",
+    "locked; may hold saved passwords": "ロック中、保存されたパスワードの可能性あり",
+    "available": "利用可能",
+    "always available": "常に利用可能",
+    "selected in settings": "設定で選択中",
+    "write failed": "書き込み失敗",
+    "read-back mismatch": "読み戻しが一致しません",
+    "store is locked": "ストアがロックされています",
+    "store is busy": "ストアが使用中です（前回の呼び出しがまだ戻っていません）",
+    "could not unlock the newly created vault":
+        "新しく作成した保管庫のロックを解除できませんでした",
+    "there is no vault": "保管庫がありません",
+    "wrong master password": "マスターパスワードが正しくありません",
+    "a vault already exists": "保管庫は既に存在します",
+    "some entries could not be decrypted; nothing was changed":
+        "一部のエントリを復号できませんでした。何も変更されていません",
+    "(currently unavailable)": "（現在利用できません）",
+    "Store:": "ストア:",
+    "Detect again": "今すぐ再検出",
+    "Using {backend}: the selected store is unavailable":
+        "{backend} を使用中: 選択したストアを利用できません",
+    "Master password": "マスターパスワード",
+    "Current master password": "現在のマスターパスワード",
+    "New master password": "新しいマスターパスワード",
+    "Repeat the password": "パスワードをもう一度入力",
+    "Create": "作成",
+    "Change": "変更",
+    "Unlock": "ロック解除",
+    "Unlocked": "ロック解除済み",
+    "Enter master password": "マスターパスワードを入力",
+    "Set master password": "マスターパスワードを設定",
+    "Change master password": "マスターパスワードを変更",
+    "Create the built-in vault": "内蔵の暗号化保管庫を作成",
+    "Unlock the built-in vault": "内蔵の暗号化保管庫のロックを解除",
+    "Change the master password": "マスターパスワードを変更",
+    "Use at least {count} characters": "{count} 文字以上で入力してください",
+    "The two passwords do not match": "2 つのパスワードが一致しません",
+    "Enter the current master password":
+        "現在のマスターパスワードを入力してください",
+    "The built-in vault stores passwords encrypted. There is no way "
+    "to recover them if you forget the master password.":
+        "内蔵の暗号化保管庫はパスワードを暗号化して保存します。"
+        "マスターパスワードを忘れると、復元する方法はありません。",
+    "Enter the master password for the built-in vault.":
+        "内蔵の暗号化保管庫のマスターパスワードを入力してください。",
+    "Changing the master password re-encrypts every password in the vault.":
+        "マスターパスワードを変更すると、保管庫内のすべての"
+        "パスワードが再暗号化されます。",
+    "Wrong master password": "マスターパスワードが正しくありません",
+    "Could not create the vault": "保管庫を作成できませんでした",
+    "The master password has been changed.": "マスターパスワードを変更しました。",
+    "Enter the master password to read saved passwords":
+        "保存されたパスワードを読み取るにはマスターパスワードを入力してください",
+
+    # --- 高危确认（验证码）--------------------------------------------------
+    "Type the result here": "ここに答えを入力",
+    "Confirm": "確認",
+    "{a} + {b} = ?": "{a} + {b} = ?",
+    "Wrong answer, here is another one": "答えが違います。別の問題を出します",
+    "Too many wrong answers": "間違いが続いたため、キャンセルしました",
+
+    # --- 密码库告警与切换 ---------------------------------------------------
+    "Password store": "パスワードストア",
+    "Password store unavailable": "パスワードストアを利用できません",
+    "{store} holds {count} saved passwords but is unavailable right now.":
+        "「{store}」に保存されたパスワードが {count} 件ありますが、"
+        "現在利用できません。",
+    "Enable it again in your system settings, or switch to another store — "
+    "switching does not copy the old passwords over, and clearing the old "
+    "store afterwards cannot be undone.":
+        "システム設定で再度有効にするか、別のストアに切り替えてください — "
+        "切り替えても古いパスワードは引き継がれず、"
+        "その後に古いストアを消去すると元に戻せません。",
+    "Open settings": "設定を開く",
+    "{store} is not available right now.": "「{store}」は現在利用できません。",
+    "The target store could not be unlocked.":
+        "切り替え先のストアのロックを解除できませんでした。",
+    "last updated {time}": "最終更新 {time}",
+    "that store does not report timestamps":
+        "そのストアはタイムスタンプを提供しません",
+    "Moving saved passwords…": "保存されたパスワードを移動しています…",
+    "{count} passwords could not be moved:":
+        "{count} 件のパスワードを移動できませんでした:",
+    "Retry the import before clearing the old store.":
+        "古いストアを消去する前に、インポートを再試行してください。",
+    "Now using {store}": "「{store}」に切り替えました",
+    "Clear the old password store": "古いパスワードストアを消去",
+    "Delete the {count} passwords from {store}?":
+        "「{store}」から {count} 件のパスワードを削除しますか？",
+    "They are now stored in the new store. Deleting them here cannot be "
+    "undone — and any other application that uses that store will no "
+    "longer find them either.":
+        "これらは新しいストアに保存されています。"
+        "ここで削除すると元に戻せません — "
+        "また、そのストアを使う他のアプリからも見つからなくなります。",
+    "Delete them": "削除する",
+    "Deleted {count} passwords from the old store":
+        "古いストアから {count} 件のパスワードを削除しました",
+
+    # --- 内置库重置 ---------------------------------------------------------
+    "Reset the built-in vault": "内蔵の暗号化保管庫をリセット",
+    "This deletes every password stored in the built-in vault.":
+        "内蔵の暗号化保管庫に保存されているすべてのパスワードが削除されます。",
+    "They cannot be recovered — not even with the master password. "
+    "Only do this if you no longer need them.":
+        "元に戻せません — マスターパスワードがあっても復元できません。"
+        "もう必要ない場合にのみ実行してください。",
+    "Delete the vault": "保管庫を削除",
+    "The built-in vault has been reset": "内蔵の暗号化保管庫をリセットしました",
+
+    # --- 切り替え先に既存データがある場合：残す / 上書き / マージ -----------
+    "{store} already holds {count} of this app's passwords ({when}).":
+        "「{store}」には本アプリのパスワードがすでに {count} 件あります"
+        "（{when}）。",
+    "{source} holds {moving} for the same screens. Whichever side you "
+    "drop is deleted for good.":
+        "「{source}」にも同じ仮想ディスプレイのパスワードが "
+        "{moving} 件あります。破棄した側は完全に削除され、"
+        "元に戻せません。",
+    "Keep the target's passwords": "切り替え先のパスワードを残す",
+    "Overwrite with the new passwords": "新しいパスワードで上書き",
+    "Merge…": "マージ…",
+    "Merge": "マージ",
+    "{adding} will be added, {identical} are identical and will be "
+    "skipped, {conflicts} conflict.":
+        "{adding} 件は追加され、{identical} 件は同一のためスキップされ、"
+        "{conflicts} 件が競合します。",
+    "Screens in conflict: {names}":
+        "競合している仮想ディスプレイ: {names}",
+    "Keep the target's version": "切り替え先のものを残す",
+    "Use the new version": "新しいほうを使う",
+    "{count} entries could not be read; they will be left as they are.":
+        "エントリ {count} 件を読み取れませんでした。"
+        "これらはそのまま残されます。",
+
+    # --- 元のストアがロック中：1 件も移動できなかった場合 ---
+    "The old store ({store}) is locked, so nothing was moved. "
+    "Unlock it and switch again to bring the passwords over.":
+        "古いストア「{store}」はロックされているため、"
+        "1 件も移動できませんでした。"
+        "ロックを解除してからもう一度切り替えると、"
+        "パスワードを引き継げます。",
 }
