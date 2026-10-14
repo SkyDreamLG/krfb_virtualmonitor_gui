@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Black">
+    <option name="sdkName" value="uv (krfb_virtualmonitor_gui)" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="uv (krfb_virtualmonitor_gui)" project-jdk-type="Python SDK" />
+</project>
